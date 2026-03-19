@@ -24,29 +24,15 @@ watch(i18n.locale, async (lang) => {
   ])
 })
 
-// 每个分类的 skill 数量（从 API 接口获取）
-const countByCategory = ref<Record<number, number>>({})
+// 移除按分类计数的逻辑，因为后端返回的分类数和实际查询出的往往对应不上
 const totalSkillsFromApi = ref(0)
 
 async function loadCounts() {
   try {
-    // 使用 skills_count 字段（如果分类 API 已返回）
-    if (catStore.categories.value.length > 0 && catStore.categories.value[0]?.skills_count !== undefined) {
-      const map: Record<number, number> = {}
-      let total = 0
-      for (const cat of catStore.categories.value) {
-        map[cat.id] = cat.skills_count ?? 0
-        total += cat.skills_count ?? 0
-      }
-      countByCategory.value  = map
-      totalSkillsFromApi.value = total
-    } else {
-      // 回退：请求一次列表接口获取总数
-      const res = await fetchSkills({ page: 1, per_page: 1 })
-      if (res.code === 0) totalSkillsFromApi.value = res.meta.total
-    }
+    const res = await fetchSkills({ page: 1, per_page: 1 })
+    if (res.code === 0) totalSkillsFromApi.value = res.meta.total
   } catch (e) {
-    console.error('[CategoryOverview] 加载分类数据失败', e)
+    console.error('[CategoryOverview] 加载总数失败', e)
   }
 }
 
@@ -150,9 +136,9 @@ function goToAll() {
             </svg>
             <!-- 分类名 -->
             <span class="cov-folder-name">{{ catStore.getCategoryName(cls.id, i18n.locale.value) }}</span>
-            <!-- 数量标签 -->
-            <span class="cov-folder-count">
-              {{ countByCategory[cls.id] ?? 0 }}
+            <!-- 数量标签（直接使用后端技能池总数） -->
+            <span class="cov-folder-count" v-if="(cls.skills_count ?? 0) > 0">
+              {{ cls.skills_count }}
               <span class="cov-folder-unit">{{ t('cat.overview.skills', 'skills') }}</span>
             </span>
           </div>

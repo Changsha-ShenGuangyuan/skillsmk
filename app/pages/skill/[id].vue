@@ -93,7 +93,6 @@ const { data: ssrData, status } = await useAsyncData(
   async () => {
     try {
       const res = await fetchSkillDetailAuto(route.params.id as string)
-      console.log('[SkillDetail] /skills/{id} 响应数据：', res)
       if (res.code !== 0 || !res.data) return null
       const parsed = await parseMarkdown(res.data.skill_md_content || '')
       return { detail: res.data, ...parsed }

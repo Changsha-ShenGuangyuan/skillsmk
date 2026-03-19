@@ -82,8 +82,8 @@ export function getSkillDisplayName(skill: Pick<ApiSkill, 'name' | 'skill_path' 
  */
 export function toSkillCardProps(skill: ApiSkill) {
   return {
-    id: skill.skill_id,            // 用 skill_id（UUID）作路由参数，确保后端可直接查询
-    skillId: skill.skill_id,        // 同上，保持兼容
+    id: skill.skill_key,           // 用 skill_key 作路由参数，可读性好且与 sitemap URL 一致
+    skillId: skill.skill_id,       // 保留 UUID 备用
     name: getSkillDisplayName(skill),
     description: skill.description,
     author: skill.owner,
@@ -182,31 +182,15 @@ export async function fetchSkillDetail(skillKey: string): Promise<SkillDetailApi
 }
 
 /**
- * 通过 skill_key 获取技能详情（优先查 localStorage 缓存，无缓存再两步查询）
- * 缓存由 fetchSkills 自动填充（用户浏览过列表即有缓存）
- * @param skillKey 技能唯一键（如 microsoft-vscode-github-skills-accessibility-skill-md）
+ * 通过 skill_key 获取技能详情（后端已支持直接用 skill_key 查询）
  */
 export async function fetchSkillDetailByKey(skillKey: string): Promise<SkillDetailApiResponse> {
-  // Step 1: 查 localStorage 缓存（同浏览器跨标签页有效）
-  const cachedId = getFromCache(skillKey)
-  if (cachedId) {
-    return $fetch<SkillDetailApiResponse>(`/api/proxy/skills/${cachedId}`)
-  }
-  // Step 2: 缓存未命中，按 skill_key 查列表取 skill_id（后端暂不支持筛选，结果不可靠）
-  const listRes = await $fetch<SkillsApiResponse>('/api/proxy/skills', {
-    query: { skill_key: skillKey, page: 1, per_page: 1 },
-  })
-  const skillId = listRes.data?.[0]?.skill_id
-  if (!skillId) {
-    return { code: 404, msg: 'Skill not found', data: null }
-  }
-  // Step 3: 用 skill_id 请求详情
-  return $fetch<SkillDetailApiResponse>(`/api/proxy/skills/${skillId}`)
+  return fetchSkillDetail(skillKey)
 }
 
 /**
- * 获取技能详情：直接以 UUID 请求，后端 GET /skills/{uuid} 接口稳定可靠。
- * URL 路由参数统一使用 skill_id，不再依赖 skill_key 或 localStorage 缓存。
+ * 获取技能详情：后端已支持 skill_key 和 UUID 两种方式查询。
+ * URL 路由参数现为 skill_key，可读性好且与 sitemap 一致。
  */
 export async function fetchSkillDetailAuto(id: string): Promise<SkillDetailApiResponse> {
   return fetchSkillDetail(id)

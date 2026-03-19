@@ -55,9 +55,25 @@ watch(i18n.locale, async (lang) => {
 })
 
 // ── 筛选 & 分页状态 ──
-const activeCategoryId = ref(0)       // 0 = ALL
+const route = useRoute()
+const router = useRouter()
+const activeCategoryId = ref(Number(route.query.cat) || 0)       // 0 = ALL
 const currentPage = ref(1)
 const itemsPerPage = 9
+
+function setActiveCategory(id: number) {
+  activeCategoryId.value = id
+  currentPage.value = 1
+  router.replace({ query: { ...route.query, cat: id === 0 ? undefined : id } })
+}
+
+watch(() => route.query.cat, (newVal) => {
+  const newId = Number(newVal) || 0
+  if (activeCategoryId.value !== newId) {
+    activeCategoryId.value = newId
+    currentPage.value = 1
+  }
+})
 
 // ── API 数据状态 ──
 const apiSkills = ref<ApiSkill[]>([])
@@ -110,13 +126,7 @@ function debouncedLoadSkills() {
 // 统一把初始加载和条件变化全部集中到 watch
 watch(
   [activeCategoryId, currentPage],
-  ([newCat, newPage], [oldCat, oldPage]) => {
-    if (newCat !== oldCat) {
-      if (currentPage.value !== 1) {
-        currentPage.value = 1
-        return
-      }
-    }
+  () => {
     debouncedLoadSkills()
   },
   { immediate: true }
@@ -125,14 +135,7 @@ watch(
 // ── 展示列表 ──
 const paginatedSkills = computed(() => apiSkills.value.map(toSkillCardProps))
 
-// 分类数量：使用 totalSkillsFound（服务端统计总数）
-const countByCategory = computed(() => {
-  const map: Record<number, number> = {}
-  for (const skill of apiSkills.value) {
-    map[skill.category_id] = (map[skill.category_id] ?? 0) + 1
-  }
-  return map
-})
+// (已移除对当前页按分类计数的无用逻辑)
 </script>
 
 <template>
@@ -166,7 +169,7 @@ const countByCategory = computed(() => {
         <button
           class="pill-btn"
           :class="{ active: activeCategoryId === 0 }"
-          @click="activeCategoryId = 0"
+          @click="setActiveCategory(0)"
         >
           ALL
         </button>
@@ -175,10 +178,10 @@ const countByCategory = computed(() => {
           :key="cat.id"
           class="pill-btn"
           :class="{ active: activeCategoryId === cat.id }"
-          @click="activeCategoryId = cat.id"
+          @click="setActiveCategory(cat.id)"
         >
           {{ catStore.getCategoryName(cat.id, i18n.locale.value) }}
-          <span class="pill-count">{{ cat.skills_count ?? countByCategory[cat.id] ?? 0 }}</span>
+          <span class="pill-count" v-if="(cat.skills_count ?? 0) > 0">{{ cat.skills_count }}</span>
         </button>
       </div>
 

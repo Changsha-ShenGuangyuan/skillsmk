@@ -192,7 +192,7 @@ const podiumOrder = computed(() => {
       <div v-if="currentPage === 1 && topThree.length > 0" class="podium-section fade-up fade-up--delay">
         <div
           v-for="{ skill, config } in podiumOrder"
-          :key="skill.skill_id"
+          :key="skill.skill_key"
           class="podium-card"
           :class="`podium-card--rank${config.rank}`"
           :style="{
@@ -201,7 +201,7 @@ const podiumOrder = computed(() => {
             '--pc-accent': config.accentColor,
             '--pc-grad':   config.gradient,
           }"
-          @click="handleRowClick(skill.skill_id)"
+          @click="handleRowClick(skill.skill_key)"
         >
           <!-- 背景渐变层 -->
           <div class="pc-bg" />
@@ -258,9 +258,9 @@ const podiumOrder = computed(() => {
             <tbody>
               <tr
                 v-for="(skill, idx) in pagedSkills"
-                :key="skill.skill_id"
+                :key="skill.skill_key"
                 class="lb-row"
-                @click="handleRowClick(skill.skill_id)"
+                @click="handleRowClick(skill.skill_key)"
               >
                 <!-- 排名序号 -->
                 <td class="td-rank">

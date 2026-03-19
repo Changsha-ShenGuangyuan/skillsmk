@@ -131,10 +131,10 @@ const handleClick = (id: string) => router.push(localePath(`/skill/${id}`))
         <div class="sc-rows">
           <div
             v-for="(skill, idx) in top10"
-            :key="skill.skill_id"
+            :key="skill.skill_key"
             class="sc-row"
             :class="{ 'sc-row--animated': animatedRows.has(idx) }"
-            @click="handleClick(skill.skill_id)"
+            @click="handleClick(skill.skill_key)"
           >
             <!-- 左侧：排名 + 技能信息 -->
             <div class="sc-row-left">
