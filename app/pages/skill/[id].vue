@@ -249,21 +249,39 @@ const formattedForks = computed(() => {
 // ── 动态 SEO Meta（跟随技能数据 + 语言同步更新）─────────────────
 const _metaSuffix  = () => t('meta.detail.suffix',  ' | SKILLSMK')
 const _metaFallback = () => t('meta.detail.fallback', 'Discover and download high-quality Agent Skills on SKILLSMK.')
+// 拼接描述：技能简介 + 作者 + Star 数，丰富 Google 搜索摘要
+const _metaDesc = () => {
+  const s = skill.value
+  if (!s) return _metaFallback()
+  const base   = s.description || _metaFallback()
+  const author = s.owner      ? `${t('detail.metaBy', ' by ')}@${s.owner}` : ''
+  const stars  = s.repo_stars ? ` · ⭐ ${s.repo_stars >= 1000 ? (s.repo_stars / 1000).toFixed(1) + 'k' : s.repo_stars}${t('detail.metaStars', ' stars')}` : ''
+  return `${base}${author}${stars}`
+}
 useSeoMeta({
   title:              () => skill.value ? `${skill.value.name}${_metaSuffix()}` : 'SKILLSMK',
   ogTitle:            () => skill.value ? `${skill.value.name}${_metaSuffix()}` : 'SKILLSMK',
-  description:        () => skill.value?.description || _metaFallback(),
-  ogDescription:      () => skill.value?.description || _metaFallback(),
+  description:        _metaDesc,
+  ogDescription:      _metaDesc,
   ogUrl:              () => `${siteUrl}/skill/${route.params.id}`,
   ogType:             'article',
   ogSiteName:         'SKILLSMK',
   twitterCard:        'summary_large_image',
   twitterTitle:       () => skill.value ? `${skill.value.name}${_metaSuffix()}` : 'SKILLSMK',
-  twitterDescription: () => skill.value?.description || _metaFallback(),
+  twitterDescription: _metaDesc,
 })
-// 静态 canonical 链接
-useHead({
-  link: [{ rel: 'canonical', href: `${siteUrl}/skill/${route.params.id}` }],
+// canonical + hreflang
+// 技能页内容不做多语言翻译，所有语言的 hreflang 均指向同一 URL，并声明 x-default
+useHead(() => {
+  const skillUrl = `${siteUrl}/skill/${route.params.id}`
+  const hreflangLocales = ['en', 'zh', 'ja', 'ko', 'de', 'fr', 'es', 'ar', 'pt']
+  return {
+    link: [
+      { rel: 'canonical', href: skillUrl },
+      ...hreflangLocales.map(lang => ({ rel: 'alternate', hreflang: lang, href: skillUrl })),
+      { rel: 'alternate', hreflang: 'x-default', href: skillUrl },
+    ],
+  }
 })
 
 // JSON-LD Schema — 使用 watchEffect，仅在 skill 有效时注入

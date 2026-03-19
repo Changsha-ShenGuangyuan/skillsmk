@@ -1,5 +1,5 @@
 # SKILLSMK — Agent Skills Marketplace
-> Last-Updated: 2026-03-18
+> Last-Updated: 2026-03-19
 > Version: 1.1
 > An open-source marketplace for discovering and sharing Agent Skills (SKILL.md modules) for LLM-powered applications.
 
@@ -41,17 +41,17 @@ pnpm dlx skills add <skill-package-name>
 ```
 
 ## Frequently Asked Questions
-Q: What are Agent Skills?
-A: Agent Skills are standardized modules that extend the capabilities of AI coding assistants. Each skill includes a SKILL.md file that documents its functionality, how it gets triggered, and any scripts or dependencies it requires.
+Q: What exactly is a SKILL.md file?
+A: A SKILL.md is a plain Markdown file placed in a coding project that gives AI agents structured, reusable instructions for a specific task. It contains YAML frontmatter (name, description, author, version), trigger conditions, and step-by-step execution instructions. Think of it as a "function definition" for your AI assistant.
 
-Q: Which tool environments does SKILLSMK support?
-A: All skills are compatible with any tool that reads the SKILL.md standard — such as Claude Code, OpenAI Codex CLI, and more automation agents adopting this open standard.
+Q: How is SKILLSMK different from Cursor Rules or System Prompts?
+A: Cursor Rules and System Prompts apply globally to every request, while a SKILL.md is task-specific and only activated when a matching trigger condition is met. Skills are also portable, project-scoped, and can be shared and reused across different projects and teams.
 
-Q: How do I install or import a skill?
-A: Clone the GitHub repository, or click the Download / Copy button on a skill page to import components directly into your workspace's skill directory. Your assistant will then discover them automatically.
+Q: Is it safe to use skills from SKILLSMK?
+A: Skills from SKILLSMK are open-source and hosted on GitHub. You can review the full source code of any skill before using it. We recommend reviewing the SKILL.md content and any scripts it references before adding it to your project. The marketplace does not execute any code on your behalf.
 
-Q: Can I use multiple skills at once?
-A: Yes. All Agent Skills are designed with composability in mind. Your assistant can autonomously invoke multiple skills within the same complex task pipeline.
+Q: How do I install a skill from SKILLSMK?
+A: On any skill's detail page, click the Download button to get the ZIP archive containing the SKILL.md and any related files, or use the Copy button to copy the raw content. Place the files in your project's skills directory (e.g., .skills/ or .agents/skills/).
 
 Q: Can I publish my own skill?
-A: Yes! Write your skill following the open SKILL.md specification and place it in a public repository. As the crawler index updates, your skill will appear in our marketplace.
+A: Yes! Place your SKILL.md in a public GitHub repository. As the crawler index updates (typically within 24-48 hours), your skill will appear in the marketplace automatically. No registration or submission is required.

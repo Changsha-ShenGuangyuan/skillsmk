@@ -46,6 +46,8 @@ const skillDetail = {
   'detail.stepExtractDesc': 'ZIP을 압축 해제하고 MCP 클라이얰트 설정 디렉토리에 파일을 넣으세요.',
   'detail.stepConfigZip':   '설정 및 활성화',
   'detail.stepConfigZipDesc':'SKILL.md의 안내에 따라 이 스킬을 앱에서 설정하고 활성화하세요.',
+  'detail.metaBy':    ' 작성자: ',
+  'detail.metaStars': ' 스타',
 } as const
 
 export default skillDetail

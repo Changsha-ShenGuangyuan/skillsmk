@@ -46,6 +46,8 @@ const skillDetail = {
   'detail.stepExtractDesc': 'ZIPを展開して、MCPクライアントの設定ディレクトリにファイルを配置してください。',
   'detail.stepConfigZip':   '設定して有効化',
   'detail.stepConfigZipDesc':'SKILL.mdの説明に従ってこのスキルを設定して有効化してください。',
+  'detail.metaBy':    ' 作者: ',
+  'detail.metaStars': ' スター',
 } as const
 
 export default skillDetail

@@ -115,7 +115,8 @@ async function loadSkills() {
 // 采用防抖执行加载，避免各种状态变化同时触发大量请求
 let fetchTimer: ReturnType<typeof setTimeout>
 function debouncedLoadSkills() {
-  // 先丫断上一次正在进行的请求（让代理层通过 req.close 事件将上游请求一并取消）
+  // 立即设置 loading 态，让骨架屏在用户点击分类的瞬间就显示出来
+  isLoading.value = true
   currentAbort?.abort()
   clearTimeout(fetchTimer)
   fetchTimer = setTimeout(() => {
@@ -187,7 +188,23 @@ const paginatedSkills = computed(() => apiSkills.value.map(toSkillCardProps))
 
       <!-- 技能网格 -->
       <div class="categories-content">
-        <template v-if="paginatedSkills.length > 0">
+        <!-- 加载中骨架屏 -->
+        <template v-if="isLoading">
+          <div class="skills-grid">
+            <div v-for="n in 9" :key="n" class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton-tag" />
+              </div>
+              <div class="skeleton-title" />
+              <div class="skeleton-desc" />
+              <div class="skeleton-desc skeleton-desc--short" />
+              <div class="skeleton-footer" />
+            </div>
+          </div>
+        </template>
+
+        <!-- 数据列表 -->
+        <template v-else-if="paginatedSkills.length > 0">
           <div class="skills-grid">
             <SkillCard
               v-for="skill in paginatedSkills"
@@ -222,7 +239,7 @@ const paginatedSkills = computed(() => apiSkills.value.map(toSkillCardProps))
           </div>
         </template>
 
-        <!-- 空状态 -->
+        <!-- 空状态（加载完成且真的没有数据） -->
         <div v-else class="empty-state">
           <div class="empty-icon-wrap">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -436,6 +453,49 @@ const paginatedSkills = computed(() => apiSkills.value.map(toSkillCardProps))
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 18px;
 }
+
+/* 骨架屏卡片 */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skeleton-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 160px;
+}
+
+.skeleton-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.skeleton-tag,
+.skeleton-title,
+.skeleton-desc,
+.skeleton-footer {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--border) 25%,
+    var(--bg-elevated) 50%,
+    var(--border) 75%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
+}
+
+.skeleton-tag    { width: 60px;  height: 20px; }
+.skeleton-title  { width: 70%;   height: 16px; margin-top: 4px; }
+.skeleton-desc   { width: 100%;  height: 13px; }
+.skeleton-desc--short { width: 60%; }
+.skeleton-footer { width: 40%;   height: 13px; margin-top: 8px; }
 
 /* 分页 */
 .pagination {

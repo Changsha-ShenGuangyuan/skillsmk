@@ -46,6 +46,8 @@ const skillDetail = {
   'detail.stepExtractDesc': '解压 ZIP 包，将文件放入您的 MCP 客户端配置目录中。',
   'detail.stepConfigZip':   '配置并启用',
   'detail.stepConfigZipDesc':'按照 SKILL.md 中的说明，在支持 MCP 的应用中配置并启用该技能。',
+  'detail.metaBy':    ' 作者 ',
+  'detail.metaStars': ' 星',
 } as const
 
 export default skillDetail

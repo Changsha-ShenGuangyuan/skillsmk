@@ -46,6 +46,8 @@ const skillDetail = {
   'detail.stepExtractDesc': 'افتح ملف ZIP وضع الملفات في دليل إعدادات عميل MCP الخاص بك.',
   'detail.stepConfigZip':   'الضبط والتفعيل',
   'detail.stepConfigZipDesc':'اتبع تعليمات SKILL.md لضبط هذه المهارة وتفعيلها في تطبيقك.',
+  'detail.metaBy':    ' بقلم ',
+  'detail.metaStars': ' نجمة',
 } as const
 
 export default skillDetail

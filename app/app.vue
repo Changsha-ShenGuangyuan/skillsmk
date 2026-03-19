@@ -26,7 +26,7 @@ useHead({
 
 // 全局 keywords meta：随 i18n 语言切换动态更新
 useSeoMeta({
-  keywords: () => t('site.keywords', 'Agent Skills, LLM, AI Agent, SKILL.md, Claude, GitHub Skills, Skills, Skill, open-source'),
+  keywords: () => t('site.keywords', 'Agent skills, claude agent skills, claude skills, skill, ai skills, github skills, openclaw skills'),
 })
 
 // 客户端：监听语言切换，重新加载分类数据

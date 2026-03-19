@@ -46,6 +46,8 @@ const skillDetail = {
   'detail.stepExtractDesc': 'Extraia o ZIP e coloque os arquivos no diretório de configuração do seu cliente MCP.',
   'detail.stepConfigZip':   'Configurar e ativar',
   'detail.stepConfigZipDesc':'Siga as instruções do SKILL.md para configurar e ativar esta skill no seu aplicativo.',
+  'detail.metaBy':    ' por ',
+  'detail.metaStars': ' estrelas',
 } as const
 
 export default skillDetail

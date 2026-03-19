@@ -46,6 +46,8 @@ const skillDetail = {
   'detail.stepExtractDesc': 'Entpacken Sie das ZIP und legen Sie die Dateien im Konfigurationsverzeichnis Ihres MCP-Clients ab.',
   'detail.stepConfigZip':   'Konfigurieren & aktivieren',
   'detail.stepConfigZipDesc':'Folgen Sie den Anweisungen in SKILL.md, um diesen Skill in Ihrer MCP-kompatiblen App zu konfigurieren.',
+  'detail.metaBy':    ' von ',
+  'detail.metaStars': ' Sterne',
 } as const
 
 export default skillDetail
