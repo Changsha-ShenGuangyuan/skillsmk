@@ -1,4 +1,4 @@
-/** Traductions Communes - Français */
+/** Traductions communes - Français */
 const common = {
   'common.view':      'Voir',
   'common.copy':      'Copier',
@@ -12,28 +12,28 @@ const common = {
   'common.online':    'system: online',
 
   /** SEO meta - Accueil */
-  'site.title':             "SKILLSMK {'|'} Marketplace de Skills pour Agent",
-  'site.description':       'Découvrez et partagez des composants Agent Skills open-source depuis GitHub, compatibles avec vos workflows IA.',
-  'site.ogDescription':     'Parcourez et copiez les meilleurs Agent Skills. Bibliothèque curatée avec évaluations LLM.',
+  'site.title':             "SKILLSMK {'|'} Marketplace Agent Skills",
+  'site.description':       'Découvrez et partagez des claude skills, ai skills et openclaw skills open-source depuis GitHub. Compatible avec Claude, Cursor et le standard SKILL.md pour agents IA.',
+  'site.ogDescription':     'La marketplace complète pour les Agent Skills. Parcourez claude agent skills, ai skills et github skills gratuitement. Boostez votre productivité LLM.',
 
   /** SEO meta - Classement */
-  'meta.lb.title':          "Classement des Skills {'|'} SKILLSMK",
-  'meta.lb.description':    'Explorez les Agent Skills les plus populaires classés en temps réel par GitHub Stars.',
+  'meta.lb.title':          "Skill Star Rankings {'|'} SKILLSMK",
+  'meta.lb.description':    'Les meilleurs claude skills, github skills et ai skills classés en temps réel par GitHub Stars. Découvrez les Agent Skills les plus populaires de la communauté.',
 
   /** SEO meta - Catégories */
   'meta.cat.title':         "Catégories de Skills {'|'} SKILLSMK",
-  'meta.cat.description':   'Parcourez tous les Agent Skills open-source par catégorie : génération de code, analyse de données, rédaction et plus.',
+  'meta.cat.description':   'Parcourez claude agent skills, ai skills et openclaw skills par catégorie : génération de code, analyse de données, rédaction, DevOps et plus encore.',
 
   /** SEO meta - Recherche */
   'meta.search.title':      "Liste des Skills {'|'} SKILLSMK",
-  'meta.search.description':'Recherchez et parcourez tous les Agent Skills open-source pour votre workflow IA.',
+  'meta.search.description': "Recherchez et filtrez claude skills, github skills, ai skills et openclaw skills par mot-clé. Trouvez l'Agent Skill idéal pour votre workflow en quelques secondes.",
 
   /** SEO meta - Détail Skill */
   'meta.detail.suffix':     " {'|'} SKILLSMK",
-  'meta.detail.fallback':   'Découvrez et téléchargez des composants Agent Skills de qualité sur SKILLSMK.',
+  'meta.detail.fallback':   'Téléchargez cet Agent Skill sur SKILLSMK — la marketplace open-source pour claude skills, ai skills et github skills.',
 
-  /** SEO Meta - Mots-clés globaux */
-  'site.keywords': 'Agent Skills, LLM, AI Agent, SKILL.md, compétences, Claude, marché de compétences, GitHub Skills, open source, outils pour développeurs',
+  /** SEO meta - Mots-clés globaux */
+  'site.keywords': 'Agent skills, claude agent skills, claude skills, skill, ai skills, github skills, openclaw skills',
 } as const
 
 export default common

@@ -1,7 +1,7 @@
 /** Leaderboard - German */
 const leaderboard = {
   'lb.badge':        'BESTENLISTE',
-  'lb.title':        'Skill Hall of Fame',
+  'lb.title':        'Skill Star Rankings',
   'lb.subtitle':     'Entdecke die beliebtesten hochwertigen Skills der Community, in Echtzeit nach Sternen gerankt',
   'lb.fullRanking':  'Vollständiges Ranking',
   'lb.colDetail':    'Skill-Details',

@@ -1,7 +1,7 @@
 /** Leaderboard - Spanish */
 const leaderboard = {
   'lb.badge':        'CLASIFICACIÓN',
-  'lb.title':        'Salón de la Fama de Skills',
+  'lb.title':        'Skill Star Rankings',
   'lb.subtitle':     'Explora las skills más populares de la comunidad, clasificadas en tiempo real por estrellas',
   'lb.fullRanking':  'Clasificación completa',
   'lb.colDetail':    'Detalles del Skill',

@@ -1,7 +1,7 @@
 /** Leaderboard - Arabic */
 const leaderboard = {
   'lb.badge':        'LEADERBOARD',
-  'lb.title':        'قاعة مشاهير المهارات',
+  'lb.title':        'Skill Star تصنيف',
   'lb.subtitle':     'استكشف أكثر المهارات شعبية في المجتمع مرتبة في الوقت الفعلي بالنجوم',
   'lb.fullRanking':  'التصنيف الكامل',
   'lb.colDetail':    'تفاصيل المهارة',

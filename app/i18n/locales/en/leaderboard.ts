@@ -1,7 +1,7 @@
 /** Leaderboard translations - English */
 const leaderboard = {
   'lb.badge':        'LEADERBOARD',
-  'lb.title':        'Skill Hall of Fame',
+  'lb.title':        'Skill Star Rankings',
   'lb.subtitle':     'Explore the most popular high-quality skills in the community, ranked in real time by stars',
   'lb.fullRanking':  'Full Rankings',
   'lb.colDetail':    'Skill Details',

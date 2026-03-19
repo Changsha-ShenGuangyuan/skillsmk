@@ -13,27 +13,27 @@ const common = {
 
   /** SEO meta - Inicio */
   'site.title':             "SKILLSMK {'|'} Mercado de Agent Skills",
-  'site.description':       'Descubra y comparta componentes Agent Skills de código abierto desde GitHub, compatibles con sus flujos de trabajo de IA.',
-  'site.ogDescription':     'Explore y copie los mejores Agent Skills. Biblioteca curada con evaluaciones LLM.',
+  'site.description':       'Descubre y comparte claude skills, ai skills y openclaw skills de código abierto desde GitHub. Compatible con Claude, Cursor y el estándar SKILL.md para agentes de IA.',
+  'site.ogDescription':     'El mercado completo de Agent Skills. Explora claude agent skills, ai skills y github skills gratis. Potencia tu productividad con LLM.',
 
   /** SEO meta - Clasificación */
-  'meta.lb.title':          "Clasificación de Skills {'|'} SKILLSMK",
-  'meta.lb.description':    'Explore los Agent Skills más populares clasificados en tiempo real por GitHub Stars.',
+  'meta.lb.title':          "Skill Star Rankings {'|'} SKILLSMK",
+  'meta.lb.description':    'Los mejores claude skills, github skills y ai skills clasificados en tiempo real por GitHub Stars. Descubre los Agent Skills más populares de la comunidad.',
 
   /** SEO meta - Categorías */
   'meta.cat.title':         "Categorías de Skills {'|'} SKILLSMK",
-  'meta.cat.description':   'Explore todos los Agent Skills de código abierto por categoría: generación de código, análisis de datos, escritura y más.',
+  'meta.cat.description':   'Explora claude agent skills, ai skills y openclaw skills por categoría: generación de código, análisis de datos, escritura, DevOps y más. Encuentra el Agent Skill perfecto.',
 
   /** SEO meta - Búsqueda */
   'meta.search.title':      "Lista de Skills {'|'} SKILLSMK",
-  'meta.search.description':'Busque y explore todos los Agent Skills de código abierto para su flujo de trabajo de IA.',
+  'meta.search.description':'Busca y filtra claude skills, github skills, ai skills y openclaw skills por palabra clave. Encuentra el Agent Skill ideal para tu flujo de trabajo en segundos.',
 
   /** SEO meta - Detalle de Skill */
   'meta.detail.suffix':     " {'|'} SKILLSMK",
-  'meta.detail.fallback':   'Descubra y descargue componentes Agent Skills de alta calidad en SKILLSMK.',
+  'meta.detail.fallback':   'Descarga este Agent Skill en SKILLSMK — el mercado open-source de claude skills, ai skills y github skills.',
 
-  /** SEO Meta - Palabras clave globales */
-  'site.keywords': 'Agent Skills, LLM, AI Agent, SKILL.md, habilidades, Claude, mercado de habilidades, GitHub Skills, código abierto, herramientas de desarrollo',
+  /** SEO meta - Palabras clave globales */
+  'site.keywords': 'Agent skills, claude agent skills, claude skills, skill, ai skills, github skills, openclaw skills',
 } as const
 
 export default common

@@ -1,7 +1,7 @@
 /** Leaderboard - Japanese */
 const leaderboard = {
   'lb.badge':        'リーダーボード',
-  'lb.title':        'スキル殿堂',
+  'lb.title':        'Skill Starランキング',
   'lb.subtitle':     'コミュニティで最も人気の高品質スキルをスター数でリアルタイムランキング',
   'lb.fullRanking':  '全ランキング',
   'lb.colDetail':    'スキル詳細',

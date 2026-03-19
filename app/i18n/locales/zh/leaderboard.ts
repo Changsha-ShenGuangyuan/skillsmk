@@ -1,7 +1,7 @@
 /** Leaderboard 翻译 - 中文 */
 const leaderboard = {
   'lb.badge':        'LEADERBOARD',
-  'lb.title':        'Skill 荣誉榜',
+  'lb.title':        'Skill Star榜',
   'lb.subtitle':     '探索社区中最受欢迎的高质量技能，按星级实时排名',
   'lb.fullRanking':  '完整排名',
   'lb.colDetail':    '技能详情',

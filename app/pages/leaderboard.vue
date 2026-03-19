@@ -184,7 +184,7 @@ const podiumOrder = computed(() => {
           </svg>
           LEADERBOARD
         </div>
-        <h2 class="lb-header__title">{{ t('lb.title', 'Skill 荣誉榜') }}</h2>
+        <h2 class="lb-header__title">{{ t('lb.title', 'Skill Star榜') }}</h2>
         <p class="lb-header__sub">{{ t('lb.subtitle', '探索社区中最受欢迎的高质量技能，按星级实时排名') }}</p>
       </div>
 
