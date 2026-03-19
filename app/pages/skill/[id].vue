@@ -1165,13 +1165,15 @@ watch(skill, (val, old) => {
   display: flex;
   gap: 6px;
   margin: 10px 0 14px;
+  flex-wrap: wrap;         /* 宽度不足时允许换行 */
 }
 
 .install-mode-tab {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm, 6px);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
@@ -1182,6 +1184,11 @@ watch(skill, (val, old) => {
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: 0.02em;
+  flex: 1 1 auto;           /* 均分父容器宽度 */
+  min-width: 0;             /* 允许收缩 */
+  white-space: nowrap;      /* 不换行 */
+  overflow: hidden;
+  text-overflow: ellipsis;  /* 仍然过长时截断 */
 }
 
 .install-mode-tab:hover {
