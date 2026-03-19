@@ -1,0 +1,57 @@
+# SKILLSMK — Agent Skills Marketplace
+> Last-Updated: 2026-03-18
+> Version: 1.1
+> An open-source marketplace for discovering and sharing Agent Skills (SKILL.md modules) for LLM-powered applications.
+
+## What is SKILLSMK?
+SKILLSMK is the premier open-source Agent Skills marketplace. Skills are reusable SKILL.md files that teach AI agents (Claude Code, OpenAI Codex CLI, and similar tools) how to perform specific, well-defined tasks. Each skill is community-contributed and hosted on GitHub.
+
+## What is a SKILL.md?
+SKILL.md is an open standard for defining AI agent capabilities as portable, composable modules. A SKILL.md file contains:
+- YAML frontmatter (name, description, version, author)
+- Trigger conditions that tell the AI agent when to use the skill
+- Step-by-step instructions for the agent to execute the skill
+- Any required scripts, dependencies, or tool requirements
+
+## Key Pages
+- Homepage: https://www.skillsmk.com/
+- Skill List: https://www.skillsmk.com/search
+- Categories: https://www.skillsmk.com/categories
+- Leaderboard: https://www.skillsmk.com/leaderboard
+
+## Full Skills Directory (for AI engines)
+> Complete machine-readable list of all skills with name, description, GitHub URL, and download links.
+- Full Text Index: https://www.skillsmk.com/llms-full.txt
+- JSON API: https://www.skillsmk.com/api/skills.json
+
+
+## Supported Languages
+zh (Chinese), en (English), ja (Japanese), ko (Korean), de (German), fr (French), es (Spanish), ar (Arabic), pt (Portuguese)
+
+## Target Users
+- AI developers building with Claude Code, OpenAI Codex CLI, and similar agents
+- Developers who want to extend their AI assistant with reusable skill modules
+- OSS contributors who want to publish and share their SKILL.md skills
+
+## How to Install a Skill
+```
+npx skills add <skill-package-name>
+bunx skills add <skill-package-name>
+pnpm dlx skills add <skill-package-name>
+```
+
+## Frequently Asked Questions
+Q: What are Agent Skills?
+A: Agent Skills are standardized modules that extend the capabilities of AI coding assistants. Each skill includes a SKILL.md file that documents its functionality, how it gets triggered, and any scripts or dependencies it requires.
+
+Q: Which tool environments does SKILLSMK support?
+A: All skills are compatible with any tool that reads the SKILL.md standard — such as Claude Code, OpenAI Codex CLI, and more automation agents adopting this open standard.
+
+Q: How do I install or import a skill?
+A: Clone the GitHub repository, or click the Download / Copy button on a skill page to import components directly into your workspace's skill directory. Your assistant will then discover them automatically.
+
+Q: Can I use multiple skills at once?
+A: Yes. All Agent Skills are designed with composability in mind. Your assistant can autonomously invoke multiple skills within the same complex task pipeline.
+
+Q: Can I publish my own skill?
+A: Yes! Write your skill following the open SKILL.md specification and place it in a public repository. As the crawler index updates, your skill will appear in our marketplace.
