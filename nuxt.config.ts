@@ -1,34 +1,4 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { createHmac } from 'node:crypto'
-import https from 'node:https'
-import http from 'node:http'
-
-/** 构建时调用后端 API（同步 HMAC 签名）*/
-function buildSign(params: Record<string, unknown>, secret: string) {
-  const timestamp = Math.floor(Date.now() / 1000).toString()
-  const nonce = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
-  const sorted = Object.entries(params)
-    .filter(([, v]) => v !== null && v !== undefined && v !== '')
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join('&')
-  const strToSign = sorted ? `${sorted}&timestamp=${timestamp}&nonce=${nonce}` : `timestamp=${timestamp}&nonce=${nonce}`
-  const sign = createHmac('sha256', secret).update(strToSign).digest('hex')
-  return { 'X-Timestamp': timestamp, 'X-Nonce': nonce, 'X-Sign': sign }
-}
-
-/** 构建时 HTTP/HTTPS GET（Promise 封装）*/
-function httpGet(url: string, headers: Record<string, string>): Promise<any> {
-  return new Promise((resolve) => {
-    const mod = url.startsWith('https') ? https : http
-    mod.get(url, { headers }, (res) => {
-      let data = ''
-      res.on('data', (chunk: Buffer) => { data += chunk.toString() })
-      res.on('end', () => { try { resolve(JSON.parse(data)) } catch { resolve(null) } })
-    }).on('error', () => resolve(null))
-  })
-}
-
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -190,63 +160,9 @@ export default defineNuxtConfig({
     '/leaderboard': { prerender: true },
     '/categories': { prerender: true },
     '/terms': { prerender: true },
-    '/skill/**': { prerender: true },  // SSG：技能详情页预渲染
-    // /search 走 SSR，支持 ?q= 长尾搜索词收录
-  },
-
-  // Nitro 预渲染配置
-  nitro: {
-    prerender: {
-      crawlLinks: true,  // 自动爬取页面中的 <a> 链接，递归预渲染
-      routes: ['/', '/categories', '/leaderboard', '/terms'],  // 爬取起点
-      ignore: ['/api/**'],  // 跳过 API 路由
-    },
-  },
-
-  // Nuxt 构建钩子：在 Nitro 配置确定后，动态注入全量 skill 预渲染路由
-  hooks: {
-    'nitro:config': async (nitroConfig) => {
-      // 仅在 generate 时执行（_generate 标志由 nuxt generate 设置）
-      if (!process.env.npm_lifecycle_script?.includes('generate')) return
-
-      const apiBase = (process.env.NUXT_API_BASE_URL || '').replace(/\/$/, '')
-      const secret  = process.env.NUXT_API_SIGN_SECRET || ''
-      if (!apiBase) {
-        console.warn('[hooks:nitro:config] NUXT_API_BASE_URL 未配置，跳过')
-        return
-      }
-
-      console.log('[hooks:nitro:config] 拉取 skill 列表...')
-      const allKeys: string[] = []
-      try {
-        const p1 = { page: 1, per_page: 100 }
-        const first = await httpGet(`${apiBase}/skills?page=1&per_page=100`, buildSign(p1, secret))
-        if (first?.code === 0) {
-          allKeys.push(...(first.data as any[]).map((s: any) => s.skill_key).filter(Boolean))
-          const lastPage: number = first.meta?.last_page ?? 1
-          if (lastPage > 1) {
-            const pageResults = await Promise.allSettled(
-              Array.from({ length: lastPage - 1 }, (_, i) => i + 2).map((p) => {
-                const params = { page: p, per_page: 100 }
-                return httpGet(`${apiBase}/skills?page=${p}&per_page=100`, buildSign(params, secret))
-              })
-            )
-            for (const r of pageResults) {
-              if (r.status === 'fulfilled' && r.value?.code === 0) {
-                allKeys.push(...(r.value.data as any[]).map((s: any) => s.skill_key).filter(Boolean))
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.error('[hooks:nitro:config] 请求失败', e)
-      }
-
-      const routes = allKeys.map((key) => `/skill/${key}`)
-      console.log(`[hooks:nitro:config] 注入 ${routes.length} 条 skill 路由`)
-      nitroConfig.prerender ??= {}
-      nitroConfig.prerender.routes ??= []
-      ;(nitroConfig.prerender.routes as string[]).push(...routes)
-    },
+    // /skill/** 使用 SWR（Stale-While-Revalidate）：
+    // 首次访问时服务端渲染并缓存，3600秒后过期时后台悄悄刷新，用户始终秒开
+    '/skill/**': { swr: 3600 },
+    // /search 走正常 SSR，支持 ?q= 长尾搜索词收录
   },
 })
