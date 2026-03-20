@@ -2,17 +2,15 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n, loadModule } from '~/i18n'
 import { fetchSkillsTop } from '~/composables/useSkillsApi'
-import type { ApiSkill } from '~/composables/useSkillsApi'
 import { useCategoryStore } from '~/composables/useCategoryStore'
 
 const i18n = useI18n()
 const t    = i18n.t
 const catStore = useCategoryStore()
 
+// i18n 模块懒加载（客户端）
 onMounted(async () => {
-  if (!import.meta.client) return
   await loadModule(i18n.locale.value, 'leaderboard')
-  await loadTop10()
 })
 watch(i18n.locale, async (lang) => {
   await loadModule(lang, 'leaderboard')
@@ -21,17 +19,13 @@ watch(i18n.locale, async (lang) => {
 const router     = useRouter()
 const localePath = useLocalePath()
 
-// ── 数据状态 ──
-const top10 = ref<ApiSkill[]>([])
-
-async function loadTop10() {
-  try {
-    const res = await fetchSkillsTop({ per_page: 10 })
-    if (res.code === 0) top10.value = res.data
-  } catch (e) {
-    console.error('Failed to load skills-top', e)
-  }
-}
+// 热门 Top10：useAsyncData 在服务端获取，支持 SWR 缓存
+const { data: top10Data } = await useAsyncData('star-chart-top10', () =>
+  fetchSkillsTop({ per_page: 10 })
+)
+const top10 = computed(() =>
+  top10Data.value?.code === 0 ? top10Data.value.data : []
+)
 
 // 从 Store 读取分类名称和颜色
 const getCatName  = (categoryId: number) => catStore.getCategoryName(categoryId, i18n.locale.value)
@@ -53,8 +47,6 @@ const rankMedal = (rank: number) => {
   if (rank === 3) return '🥉'
   return null
 }
-
-
 
 // ── 入场动画 ──
 const animatedRows = ref<Set<number>>(new Set())
@@ -81,12 +73,6 @@ function triggerAll() {
     setTimeout(() => animatedRows.value.add(i), i * 60)
   })
 }
-
-// 重新触发动画（数据加载后）
-watch(top10, () => {
-  animatedRows.value = new Set()
-  setTimeout(() => triggerAll(), 100)
-}, { once: true })
 
 // 点击跳转
 const handleClick = (id: string) => router.push(localePath(`/skill/${id}`))

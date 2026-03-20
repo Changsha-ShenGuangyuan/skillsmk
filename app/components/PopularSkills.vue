@@ -1,38 +1,29 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import SkillCard from './SkillCard.vue'
 import { useI18n, loadModule } from '~/i18n'
 import { fetchSkillsTop, toSkillCardProps } from '~/composables/useSkillsApi'
-import type { ApiSkill } from '~/composables/useSkillsApi'
 
 const i18n = useI18n()
 const t = i18n.t
 
+// i18n 模块懒加载（客户端）
 onMounted(async () => {
-  if (!import.meta.client) return
   await loadModule(i18n.locale.value, 'search')
-  await loadPopular()
 })
 watch(i18n.locale, async (lang) => {
   await loadModule(lang, 'search')
 })
 
-// ── 热门技能数据 ──
-const topSkills = ref<ApiSkill[]>([])
-
-async function loadPopular() {
-  try {
-    const res = await fetchSkillsTop({ per_page: 4 })
-    if (res.code === 0) {
-      topSkills.value = res.data
-    }
-  } catch (e) {
-    console.error('Failed to load top skills', e)
-  }
-}
+// 热门技能：使用 useAsyncData 在服务端获取，支持 SWR 缓存
+const { data: topData } = await useAsyncData('popular-skills', () =>
+  fetchSkillsTop({ per_page: 4 })
+)
 
 // 映射为 SkillCard 所需格式
-const popularSkills = computed(() => topSkills.value.map(toSkillCardProps))
+const popularSkills = computed(() =>
+  topData.value?.code === 0 ? topData.value.data.map(toSkillCardProps) : []
+)
 </script>
 
 <template>

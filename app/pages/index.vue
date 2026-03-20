@@ -49,13 +49,9 @@ useHead({
   <div class="main-content">
     <SearchSection />
     <CategoryOverview />
-    <!-- skills-top 接口仅客户端调用，用 ClientOnly 避免 SSR/prerender 阶段 403 -->
-    <ClientOnly>
-      <PopularSkills />
-    </ClientOnly>
-    <ClientOnly>
-      <StarChart />
-    </ClientOnly>
+    <!-- skills-top 已改为 useAsyncData 服务端渲染，移除 ClientOnly -->
+    <PopularSkills />
+    <StarChart />
     <HowItWorks />
     <FaqSection />
   </div>
