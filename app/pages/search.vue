@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n, loadModule } from '~/i18n'
 import { fetchSkills, toSkillCardProps } from '~/composables/useSkillsApi'
 import type { ApiSkill } from '~/composables/useSkillsApi'
@@ -40,16 +40,39 @@ watch(i18n.locale, async (lang) => {
   ])
 })
 
+const route = useRoute()
+const router = useRouter()
+
+// 初始查询参数（从 URL 获取，支持直接访问搜索结果页）
+const initialQuery = String(route.query.q || '')
+const initialPage  = Number(route.query.page) || 1
+
 // ── 搜索 & 分页状态 ──
-const searchQuery = ref('')
-const currentPage = ref(1)
+const searchQuery = ref(initialQuery)
+const currentPage = ref(initialPage)
 const itemsPerPage = 9
 
-// ── API 数据状态 ──
-const apiSkills = ref<ApiSkill[]>([])
-const totalItems = ref(0)
-const totalPages = ref(1)
-const isLoading = ref(false)
+// ── 服务端渲染初始数据（useAsyncData，与 SWR 缓存配合）──
+const { data: _initData } = await useAsyncData(
+  `search-q${initialQuery}-p${initialPage}`,
+  () => fetchSkills({ page: initialPage, per_page: itemsPerPage, q: initialQuery || undefined })
+)
+const _init = _initData.value?.code === 0 ? _initData.value : null
+
+// ── API 数据状态（从 SSR 数据初始化）──
+const apiSkills  = ref<ApiSkill[]>(_init?.data ?? [])
+const totalItems = ref(_init?.meta?.total ?? 0)
+const totalPages = ref(_init?.meta?.last_page ?? 1)
+const isLoading  = ref(false)
+
+// SPA 导航回返时同步初始数据
+watch(_initData, (val) => {
+  if (val?.code === 0) {
+    apiSkills.value  = val.data
+    totalItems.value = val.meta.total
+    totalPages.value = val.meta.last_page
+  }
+})
 
 // ── 加载数据（带 AbortController，取消旧请求避免 429）──
 let currentAbort: AbortController | null = null
@@ -68,7 +91,7 @@ async function loadSkills() {
       q: searchQuery.value || undefined,
     }, signal)
     if (res.code === 0) {
-      apiSkills.value = res.data
+      apiSkills.value  = res.data
       totalItems.value = res.meta.total
       totalPages.value = res.meta.last_page
     }
@@ -93,19 +116,25 @@ function debouncedLoadSkills() {
   }, 300)
 }
 
-// 统一把初始加载和条件变化全部集中到 watch
+// 离开搜索页时清理定时器和 in-flight 请求，防止 429
+onUnmounted(() => {
+  clearTimeout(fetchTimer)
+  currentAbort?.abort()
+})
+
+// 初始数据已由 useAsyncData（SSR）提供；仅在搜索词/翻页变化时触发客户端请求
 watch(
   [searchQuery, currentPage],
-  ([newQuery, newPage], [oldQuery, oldPage]) => {
+  ([newQuery, newPage], [oldQuery, _oldPage]) => {
     if (newQuery !== oldQuery) {
       if (currentPage.value !== 1) {
         currentPage.value = 1
-        return // 触发 currentPage 的 watch，当前这次短路抛弃
+        return // 触发 currentPage 的 watch，当前这次短路抚弃
       }
     }
     debouncedLoadSkills()
   },
-  { immediate: true } // 初始化时由它负责第一波拉取
+  { immediate: false } // 初始数据已由 useAsyncData 提供，无需立即触发
 )
 
 const paginatedSkills = computed(() => apiSkills.value.map(toSkillCardProps))

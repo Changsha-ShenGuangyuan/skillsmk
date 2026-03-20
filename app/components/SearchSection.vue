@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 import SkillCard from './SkillCard.vue'
 import CategoryItem from './CategoryItem.vue'
 import { useI18n, loadModule } from '~/i18n'
@@ -51,23 +51,32 @@ function goToSearch() {
   router.push(localePath('/search'))
 }
 
-// ── API 数据状态 ──
-const apiSkills = ref<ApiSkill[]>([])
-const totalSkills = ref(0)  // 全站总量，由独立请求获取，不受过滤条件影响
-const isLoading = ref(false)
+// ── 服务端渲染初始数据（useAsyncData，与首页 SWR 缓存配合）──
+// 首次访问首页时服务端执行接口请求，结果嵌入 HTML；用户搜索/筛选时再走客户端请求
+const { data: _initData } = await useAsyncData('search-section-skills', () =>
+  fetchSkills({ page: 1, per_page: 9 })
+)
+const _init = _initData.value?.code === 0 ? _initData.value : null
 
-// ── 专门获取全站总量（不带任何过滤参数，与列表请求解耦）──
-async function loadGlobalStats() {
-  try {
-    const res = await fetchSkills({ page: 1, per_page: 1 })
-    if (res.code === 0 && res.meta?.total) {
-      totalSkills.value = res.meta.total
-    }
-  } catch { /* 静默忽略，不影响主流程 */ }
-}
+// ── API 数据状态（从 SSR 数据初始化）──
+const apiSkills   = ref<ApiSkill[]>(_init?.data ?? [])
+const totalSkills = ref(_init?.meta?.total ?? 0)  // 全站总量，来自首次 SSR 请求的 meta.total
+const isLoading   = ref(false)
 
-// ── 加载过滤后的技能列表 ──
+// SPA 导航回返时同步初始数据
+watch(_initData, (val) => {
+  if (val?.code === 0) {
+    apiSkills.value   = val.data
+    totalSkills.value = val.meta.total
+  }
+})
+
+// ── 加载过滤后的技能列表（带 AbortController 防 429）──
+let currentAbort: AbortController | null = null
+
 async function loadSkills() {
+  currentAbort?.abort()
+  currentAbort = new AbortController()
   isLoading.value = true
   try {
     const res = await fetchSkills({
@@ -84,12 +93,10 @@ async function loadSkills() {
   }
 }
 
-onMounted(() => {
-  loadGlobalStats()
-  loadSkills()
-})
+// 离开首页时清理 in-flight 请求
+onUnmounted(() => currentAbort?.abort())
 
-// 搜索或分类变化时 debounce 加载
+// 搜索或分类变化时 debounce 加载（初始数据已由 SSR 提供，无需立即触发）
 let debounceTimer: ReturnType<typeof setTimeout>
 watch([query, activeCategory], () => {
   clearTimeout(debounceTimer)

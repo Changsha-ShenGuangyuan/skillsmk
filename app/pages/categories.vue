@@ -90,6 +90,7 @@ const apiSkills        = ref<ApiSkill[]>(_init?.data ?? [])
 const totalSkillsFound = ref(_init?.meta?.total ?? 0)
 const totalPages       = ref(_init?.meta?.last_page ?? 1)
 const isLoading        = ref(false)
+const apiError         = ref<string | null>(null)  // 区分「接口出错」和「真正的空数据」
 
 // SPA 导航回到本页时，useAsyncData 重新拉取后同步更新展示数据
 watch(_initData, (val) => {
@@ -109,6 +110,7 @@ async function loadSkills() {
   const signal = currentAbort.signal
 
   isLoading.value = true
+  apiError.value = null
   try {
     const res = await fetchSkills({
       page: currentPage.value,
@@ -122,6 +124,9 @@ async function loadSkills() {
     }
   } catch (e: any) {
     if (e?.name !== 'AbortError' && !e?.message?.includes('aborted')) {
+      // 记录错误状态（429 限流、网络错误等），保留现有数据不清空
+      const status = e?.status ?? e?.statusCode
+      apiError.value = status === 429 ? 'rate_limited' : 'error'
       console.error('[categories] loadSkills 失败', e)
     }
   } finally {
@@ -260,6 +265,17 @@ const paginatedSkills = computed(() => apiSkills.value.map(toSkillCardProps))
             </button>
           </div>
         </template>
+
+        <!-- 接口出错（429限流/网络错误）：保留已有数据或展示重试提示 -->
+        <div v-else-if="apiError" class="empty-state">
+          <div class="empty-icon-wrap">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <p class="empty-text">{{ apiError === 'rate_limited' ? t('cat.rateLimited', '请求过于频繁，请稍候再试') : t('cat.loadError', '加载失败，请稍候重试') }}</p>
+          <button class="retry-btn" @click="debouncedLoadSkills()">{{ t('cat.retry', '重试') }}</button>
+        </div>
 
         <!-- 空状态（加载完成且真的没有数据） -->
         <div v-else class="empty-state">
@@ -583,6 +599,24 @@ const paginatedSkills = computed(() => apiSkills.value.map(toSkillCardProps))
   font-size: 13px;
   color: var(--muted);
   font-family: var(--font-mono);
+}
+
+.retry-btn {
+  margin-top: 16px;
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--fg-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.retry-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 
 @media (max-width: 768px) {
