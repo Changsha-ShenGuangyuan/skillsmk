@@ -10,31 +10,31 @@ const i18n    = useI18n()
 const { t }   = i18n
 const catStore = useCategoryStore()
 
-// 初始加载 + 语言切换时重新加载
+// ── 服务端渲染初始数据（useAsyncData，与首页 SWR 缓存配合）──
+// 加载分类数据：让 useCategoryStore 的 useState 在 SSR 阶段就充填好
+await useAsyncData('category-store', () => catStore.ensureLoaded(i18n.locale.value))
+
+// i18n 模块加载（客户端）
 onMounted(async () => {
-  await Promise.all([
-    loadModule(i18n.locale.value, 'categories'),
-    catStore.ensureLoaded(i18n.locale.value),
-  ])
-  await loadCounts()
+  await loadModule(i18n.locale.value, 'categories')
 })
 watch(i18n.locale, async (lang) => {
-  await Promise.all([
-    loadModule(lang, 'categories'),
-  ])
+  await loadModule(lang, 'categories')
+  await catStore.ensureLoaded(lang)  // 语言切换时重新拉取分类（带多语言翻译）
 })
 
-// 移除按分类计数的逻辑，因为后端返回的分类数和实际查询出的往往对应不上
-const totalSkillsFromApi = ref(0)
+// 获取全站技能总数（服务端渲染）
+const { data: _countData } = await useAsyncData('category-overview-count',
+  () => fetchSkills({ page: 1, per_page: 1 })
+)
+const totalSkillsFromApi = ref(
+  _countData.value?.code === 0 ? _countData.value.meta.total : 0
+)
 
-async function loadCounts() {
-  try {
-    const res = await fetchSkills({ page: 1, per_page: 1 })
-    if (res.code === 0) totalSkillsFromApi.value = res.meta.total
-  } catch (e) {
-    console.error('[CategoryOverview] 加载总数失败', e)
-  }
-}
+// SPA 导航回应时同步总数
+watch(_countData, (val) => {
+  if (val?.code === 0) totalSkillsFromApi.value = val.meta.total
+})
 
 const totalSkills     = computed(() => totalSkillsFromApi.value)
 const totalCategories = computed(() => catStore.categories.value.length)

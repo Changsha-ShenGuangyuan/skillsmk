@@ -25,6 +25,9 @@ export function getColorByIndex(idx: number) {
   return PALETTE[((idx % PALETTE.length) + PALETTE.length) % PALETTE.length] as { bg: string; text: string }
 }
 
+// 模块级：跨所有 useCategoryStore() 实例共享，防止并发请求竞态
+let _inFlightPromise: Promise<void> | null = null
+
 export function useCategoryStore() {
   // useState 保证跨组件单例（同一个 key 只有一份状态）
   const categories   = useState<ApiCategory[]>('global-categories', () => [])
@@ -36,21 +39,31 @@ export function useCategoryStore() {
    * 加载分类数据
    * - 首次调用时承载所有翻译
    * - 语言切换时，locale 与上次不同则重新请求，更新翻译缓存
+   * - 并发调用时共享同一个 in-flight Promise，避免发出多个重复请求
    */
   async function ensureLoaded(locale?: string) {
     const lang = locale || 'en'
     // 如果语言未变且已有数据，直接复用
     if (isLoaded.value && loadedLocale.value === lang) return
-    try {
-      const res = await fetchCategories(lang) // 传入当前语言
-      if (res.code === 0) {
-        categories.value   = res.data
-        isLoaded.value     = true
-        loadedLocale.value = lang
+    // 如果已有请求在进行，等待它完成（而不是发出新请求）
+    if (_inFlightPromise) return _inFlightPromise
+
+    _inFlightPromise = (async () => {
+      try {
+        const res = await fetchCategories(lang) // 传入当前语言
+        if (res.code === 0) {
+          categories.value   = res.data
+          isLoaded.value     = true
+          loadedLocale.value = lang
+        }
+      } catch (e) {
+        console.error('[useCategoryStore] 加载分类失败', e)
+      } finally {
+        _inFlightPromise = null  // 请求完成后清空，下次语言切换时可重新触发
       }
-    } catch (e) {
-      console.error('[useCategoryStore] 加载分类失败', e)
-    }
+    })()
+
+    return _inFlightPromise
   }
 
   /**

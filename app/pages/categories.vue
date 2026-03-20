@@ -40,11 +40,14 @@ useHead({
   ],
 })
 
+// 分类数据 SSR 加载（让 useState 在服务端就充填好，供下方过滤标签使用）
+await useAsyncData('category-store', () => catStore.ensureLoaded(i18n.locale.value))
+
+// i18n 模块加载（客户端）
 onMounted(async () => {
   await Promise.all([
     loadModule(i18n.locale.value, 'categories'),
     loadModule(i18n.locale.value, 'common'),
-    catStore.ensureLoaded(i18n.locale.value),
   ])
 })
 watch(i18n.locale, async (lang) => {
@@ -52,6 +55,7 @@ watch(i18n.locale, async (lang) => {
     loadModule(lang, 'categories'),
     loadModule(lang, 'common'),
   ])
+  await catStore.ensureLoaded(lang)  // 语言切换时重新拉取分类翻译
 })
 
 const route = useRoute()
