@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n, loadModule } from '~/i18n'
 import { fetchSkills, toSkillCardProps } from '~/composables/useSkillsApi'
 import type { ApiSkill } from '~/composables/useSkillsApi'
@@ -123,6 +123,13 @@ function debouncedLoadSkills() {
     loadSkills()
   }, 800) // 800ms 防抖：确保快速切分类期间不会向后端发送中间请求
 }
+
+// 离开分类页时取消 debounce 定时器 + 中止正在进行的请求，
+// 防止离开后旧请求仍在运行、再进入又叠加新请求导致后端 429
+onUnmounted(() => {
+  clearTimeout(fetchTimer)
+  currentAbort?.abort()
+})
 
 // 统一把初始加载和条件变化全部集中到 watch
 watch(
