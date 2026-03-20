@@ -154,15 +154,14 @@ export default defineNuxtConfig({
     langDir: '../app/i18n/locales/',
   },
 
-  // 路由规则：混合渲染策略
+  // 路由规则：全站统一使用 SWR（Stale-While-Revalidate）缓存策略
+  // 首次请求服务端渲染并缓存，缓存过期后后台悄悄刷新，用户始终秒开
   routeRules: {
-    '/': { prerender: true },
-    '/leaderboard': { prerender: true },
-    '/categories': { prerender: true },
-    '/terms': { prerender: true },
-    // /skill/** 使用 SWR（Stale-While-Revalidate）：
-    // 首次访问时服务端渲染并缓存，3600秒后过期时后台悄悄刷新，用户始终秒开
-    '/skill/**': { swr: 3600 },
-    // /search 走正常 SSR，支持 ?q= 长尾搜索词收录
+    '/':            { swr: 1800  },  // 首页：30分钟，含技能数量等动态数据
+    '/categories':  { swr: 3600  },  // 分类页：1小时，分类变化少
+    '/leaderboard': { swr: 600   },  // 排行榜：10分钟，需要相对及时
+    '/terms':       { swr: 86400 },  // 条款页：1天，内容极少变化
+    '/skill/**':    { swr: 3600  },  // 技能详情：1小时
+    // /search 走正常 SSR，支持 ?q= 长尾搜索词实时查询
   },
 })
