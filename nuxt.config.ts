@@ -149,9 +149,8 @@ export default defineNuxtConfig({
       useCookie: true,
       cookieKey: 'skillmk-locale',
       redirectOn: 'root',
-      // alwaysRedirect: true 使服务端在渲染前先重定向到正确语言的 URL，
-      // 确保 SSR 和客户端使用同一 locale，消除 Hydration Mismatch
-      alwaysRedirect: true,
+      // 客户端重定向已被 server/middleware/locale-redirect.ts 中的服务端 302 取代，
+      // 移除 alwaysRedirect: true，避免客户端 hydration 阶段重复触发导致 Mismatch
     },
     // v10 中懒加载为默认行为（无需 lazy 选项），langDir 为顶层配置
     langDir: '../app/i18n/locales/',
