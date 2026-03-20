@@ -40,13 +40,15 @@ useHead({
   ],
 })
 
+// 分类数据 SSR 加载（技能卡片显示分类名称/颜色需要此数据）
+await useAsyncData('category-store', () => catStore.ensureLoaded(i18n.locale.value))
+
+// i18n 模块加载（客户端）
 onMounted(async () => {
   await Promise.all([
     loadModule(i18n.locale.value, 'leaderboard'),
     loadModule(i18n.locale.value, 'common'),
-    catStore.ensureLoaded(i18n.locale.value),
   ])
-  // 初始数据已由 useAsyncData 在服务端加载，无需在 onMounted 再次请求
 })
 
 watch(i18n.locale, async (lang) => {
@@ -54,6 +56,7 @@ watch(i18n.locale, async (lang) => {
     loadModule(lang, 'leaderboard'),
     loadModule(lang, 'common'),
   ])
+  await catStore.ensureLoaded(lang)  // 语言切换时重新拉取分类翻译
 })
 
 const router = useRouter()
