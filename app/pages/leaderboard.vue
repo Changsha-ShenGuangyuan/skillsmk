@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { fetchSkillsTop, getSkillDisplayName } from '~/composables/useSkillsApi'
 import type { ApiSkill } from '~/composables/useSkillsApi'
 import { useCategoryStore } from '~/composables/useCategoryStore'
@@ -46,7 +46,7 @@ onMounted(async () => {
     loadModule(i18n.locale.value, 'common'),
     catStore.ensureLoaded(i18n.locale.value),
   ])
-  await loadPage()
+  // 初始数据已由 useAsyncData 在服务端加载，无需在 onMounted 再次请求
 })
 
 watch(i18n.locale, async (lang) => {
@@ -59,16 +59,38 @@ watch(i18n.locale, async (lang) => {
 const router = useRouter()
 const localePath = useLocalePath()
 
-// ── 数据状态 ──
-const allSkills  = ref<ApiSkill[]>([])
-const totalCount = ref(0)
-const isLoading  = ref(false)
 const currentPage = ref(1)
 const itemsPerPage = 10
 
+// ── 服务端渲染初始数据（useAsyncData，与 SWR 缓存配合）──
+// 首次访问由服务端执行接口请求，结果嵌入 HTML；用户翻页时再走客户端请求
+const { data: _initData } = await useAsyncData(
+  'leaderboard-page1',
+  () => fetchSkillsTop({ page: 1, per_page: itemsPerPage })
+)
+const _init = _initData.value?.code === 0 ? _initData.value : null
+
+// ── 数据状态（从 SSR 数据初始化）──
+const allSkills  = ref<ApiSkill[]>(_init?.data ?? [])
+const totalCount = ref(_init?.meta?.total ?? 0)
+const isLoading  = ref(false)
+
+// SPA 导航回返时，useAsyncData 重新拉取后同步更新展示数据
+watch(_initData, (val) => {
+  if (val?.code === 0 && currentPage.value === 1) {
+    allSkills.value  = val.data
+    totalCount.value = val.meta.total
+  }
+})
+
 const totalPages = computed(() => Math.ceil(totalCount.value / itemsPerPage) || 1)
 
+// ── 翻页加载（带 AbortController 防止快速翻页触发 429）──
+let currentAbort: AbortController | null = null
+
 async function loadPage() {
+  currentAbort?.abort()
+  currentAbort = new AbortController()
   isLoading.value = true
   try {
     const res = await fetchSkillsTop({ page: currentPage.value, per_page: itemsPerPage })
@@ -83,6 +105,9 @@ async function loadPage() {
   }
 }
 
+onUnmounted(() => currentAbort?.abort())
+
+// 翻页时触发客户端加载（初始第1页数据已由 useAsyncData 提供）
 watch(currentPage, () => loadPage())
 
 // 前三名（仅第一页展示）

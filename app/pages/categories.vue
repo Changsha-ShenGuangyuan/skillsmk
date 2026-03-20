@@ -54,12 +54,14 @@ watch(i18n.locale, async (lang) => {
   ])
 })
 
-// ── 筛选 & 分页状态 ──
 const route = useRoute()
 const router = useRouter()
-const activeCategoryId = ref(Number(route.query.cat) || 0)       // 0 = ALL
-const currentPage = ref(1)
 const itemsPerPage = 9
+const initialCategoryId = Number(route.query.cat) || 0  // 0 = ALL
+
+// ── 筛选 & 分页状态 ──
+const activeCategoryId = ref(initialCategoryId)
+const currentPage = ref(1)
 
 function setActiveCategory(id: number) {
   activeCategoryId.value = id
@@ -75,11 +77,28 @@ watch(() => route.query.cat, (newVal) => {
   }
 })
 
-// ── API 数据状态 ──
-const apiSkills = ref<ApiSkill[]>([])
-const totalSkillsFound = ref(0)
-const totalPages = ref(1)
-const isLoading = ref(false)
+// ── 服务端渲染初始数据（useAsyncData，与 SWR 缓存配合）──
+// 首次访问由服务端执行接口请求，结果嵌入 HTML；用户交互时再走客户端请求
+const { data: _initData } = await useAsyncData(
+  `categories-cat${initialCategoryId}-p1`,
+  () => fetchSkills({ page: 1, per_page: itemsPerPage, category_id: initialCategoryId || undefined })
+)
+const _init = _initData.value?.code === 0 ? _initData.value : null
+
+// ── API 数据状态（从 SSR 数据初始化，客户端交互时动态更新）──
+const apiSkills        = ref<ApiSkill[]>(_init?.data ?? [])
+const totalSkillsFound = ref(_init?.meta?.total ?? 0)
+const totalPages       = ref(_init?.meta?.last_page ?? 1)
+const isLoading        = ref(false)
+
+// SPA 导航回到本页时，useAsyncData 重新拉取后同步更新展示数据
+watch(_initData, (val) => {
+  if (val?.code === 0) {
+    apiSkills.value        = val.data
+    totalSkillsFound.value = val.meta.total
+    totalPages.value       = val.meta.last_page
+  }
+})
 
 // ── 加载数据（带 AbortController，取消旧请求避免 429）──
 let currentAbort: AbortController | null = null
@@ -97,9 +116,9 @@ async function loadSkills() {
       category_id: activeCategoryId.value || undefined,
     }, signal)
     if (res.code === 0) {
-      apiSkills.value = res.data
+      apiSkills.value        = res.data
       totalSkillsFound.value = res.meta.total
-      totalPages.value = res.meta.last_page
+      totalPages.value       = res.meta.last_page
     }
   } catch (e: any) {
     if (e?.name !== 'AbortError' && !e?.message?.includes('aborted')) {
@@ -115,29 +134,25 @@ async function loadSkills() {
 // 采用防抖执行加载，避免各种状态变化同时触发大量请求
 let fetchTimer: ReturnType<typeof setTimeout>
 function debouncedLoadSkills() {
-  // 立即设置 loading 态，让骨架屏在用户点击分类的瞬间就显示出来
   isLoading.value = true
   currentAbort?.abort()
   clearTimeout(fetchTimer)
   fetchTimer = setTimeout(() => {
     loadSkills()
-  }, 800) // 800ms 防抖：确保快速切分类期间不会向后端发送中间请求
+  }, 800)
 }
 
-// 离开分类页时取消 debounce 定时器 + 中止正在进行的请求，
-// 防止离开后旧请求仍在运行、再进入又叠加新请求导致后端 429
+// 离开分类页时清理定时器和 in-flight 请求，防止 429
 onUnmounted(() => {
   clearTimeout(fetchTimer)
   currentAbort?.abort()
 })
 
-// 统一把初始加载和条件变化全部集中到 watch
+// 初始数据已由 useAsyncData（SSR）提供；仅在用户切换分类/翻页时触发客户端请求
 watch(
   [activeCategoryId, currentPage],
-  () => {
-    debouncedLoadSkills()
-  },
-  { immediate: true }
+  () => debouncedLoadSkills(),
+  { immediate: false }
 )
 
 // ── 展示列表 ──
