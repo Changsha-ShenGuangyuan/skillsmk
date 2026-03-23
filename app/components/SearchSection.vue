@@ -51,9 +51,6 @@ function goToSearch() {
   router.push(localePath('/search'))
 }
 
-// 分类数据 SSR 加载（SearchSection 是 DOM 中第一个组件，必须自己加载，不能依赖后续的 CategoryOverview）
-await useAsyncData('category-store', () => catStore.ensureLoaded(i18n.locale.value))
-
 // ── 服务端渲染初始数据（useAsyncData，与首页 SWR 缓存配合）──
 // 首次访问首页时服务端执行接口请求，结果嵌入 HTML；用户搜索/筛选时再走客户端请求
 const { data: _initData } = await useAsyncData('search-section-skills', () =>

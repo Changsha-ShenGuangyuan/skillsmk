@@ -16,9 +16,6 @@ const t    = i18n.t
 const catStore = useCategoryStore()
 const { public: { siteUrl } } = useRuntimeConfig()
 
-// 分类数据 SSR 加载（技能详情页显示分类名称需要此数据）
-await useAsyncData('category-store', () => catStore.ensureLoaded(i18n.locale.value))
-
 // i18n 模块加载（客户端）
 onMounted(async () => {
   await Promise.all([

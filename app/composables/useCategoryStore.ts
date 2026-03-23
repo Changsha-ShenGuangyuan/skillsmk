@@ -43,8 +43,13 @@ export function useCategoryStore() {
    */
   async function ensureLoaded(locale?: string) {
     const lang = locale || 'en'
-    // 如果语言未变且已有数据，直接复用
+    // 语言未变且已有数据：直接复用（优先判断）
     if (isLoaded.value && loadedLocale.value === lang) return
+    // 兜底：categories 已有 SSR 数据且语言匹配，即使 isLoaded 状态丢失也不重复请求
+    if (import.meta.client && categories.value.length > 0 && loadedLocale.value === lang) {
+      isLoaded.value = true  // 修复标志位
+      return
+    }
     // 如果已有请求在进行，等待它完成（而不是发出新请求）
     if (_inFlightPromise) return _inFlightPromise
 

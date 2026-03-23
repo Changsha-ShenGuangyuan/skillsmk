@@ -10,10 +10,6 @@ const i18n    = useI18n()
 const { t }   = i18n
 const catStore = useCategoryStore()
 
-// ── 服务端渲染初始数据（useAsyncData，与首页 SWR 缓存配合）──
-// 加载分类数据：让 useCategoryStore 的 useState 在 SSR 阶段就充填好
-await useAsyncData('category-store', () => catStore.ensureLoaded(i18n.locale.value))
-
 // i18n 模块加载（客户端）
 onMounted(async () => {
   await loadModule(i18n.locale.value, 'categories')

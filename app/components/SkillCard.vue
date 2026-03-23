@@ -10,7 +10,6 @@ const localePath = useLocalePath()
 
 onMounted(async () => {
   await loadModule(i18n.locale.value, 'skillCard')
-  await catStore.ensureLoaded(i18n.locale.value)
 })
 watch(i18n.locale, async (lang) => {
   await loadModule(lang, 'skillCard')
