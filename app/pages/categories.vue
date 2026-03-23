@@ -40,9 +40,6 @@ useHead({
   ],
 })
 
-// 分类数据 SSR 加载（让 useState 在服务端就充填好，供下方过滤标签使用）
-await useAsyncData('category-store', () => catStore.ensureLoaded(i18n.locale.value))
-
 // i18n 模块加载（客户端）
 onMounted(async () => {
   await Promise.all([

@@ -40,9 +40,6 @@ useHead({
   ],
 })
 
-// 分类数据 SSR 加载（技能卡片显示分类名称/颜色需要此数据）
-await useAsyncData('category-store', () => catStore.ensureLoaded(i18n.locale.value))
-
 // i18n 模块加载（客户端）
 onMounted(async () => {
   await Promise.all([

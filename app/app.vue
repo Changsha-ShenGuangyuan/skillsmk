@@ -34,11 +34,6 @@ if (import.meta.client) {
   watch(i18n.locale, async (lang) => {
     await catStore.ensureLoaded(lang)
   })
-
-  // 应用启动时加载分类（携带初始语言）
-  onMounted(async () => {
-    await catStore.ensureLoaded(i18n.locale.value)
-  })
 }
 </script>
 
