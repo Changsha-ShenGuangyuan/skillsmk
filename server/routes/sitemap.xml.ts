@@ -28,7 +28,7 @@ function hreflangLinks(baseUrl: string, path: string): string {
 const STATIC_PAGES = [
   { path: '/',            changefreq: 'daily',   priority: '1.0' },
   { path: '/categories',  changefreq: 'weekly',  priority: '0.8' },
-  { path: '/leaderboard', changefreq: 'daily',   priority: '0.8' },
+  { path: '/rankings', changefreq: 'daily',   priority: '0.8' },
   { path: '/search',      changefreq: 'weekly',  priority: '0.7' },
   { path: '/terms',       changefreq: 'monthly', priority: '0.3' },
 ]

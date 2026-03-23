@@ -155,7 +155,7 @@ export default defineNuxtConfig({
     // ── 英文默认路由（prefix_except_default 无前缀）──
     '/': { swr: 1800 },  // 首页：30分钟
     '/categories': { swr: 3600 },  // 分类页：1小时
-    '/leaderboard': { swr: 600 },  // 排行榜：10分钟
+    '/rankings': { swr: 600 },  // 排行榜：10分钟
     '/terms': { swr: 86400 },  // 条款页：1天
     '/skill/**': { swr: 3600 },  // 技能详情：1小时
 
@@ -164,7 +164,7 @@ export default defineNuxtConfig({
     // 之前这些路由没有 SWR 规则，每次都是直接 SSR + 调后端接口，导致频繁触发 429
     '/:lang': { swr: 1800 },
     '/:lang/categories': { swr: 3600 },
-    '/:lang/leaderboard': { swr: 600 },
+    '/:lang/rankings': { swr: 600 },
     '/:lang/terms': { swr: 86400 },
     '/:lang/skill/**': { swr: 3600 },
     // /search 初始页（无搜索词时）可缓存，有 ?q= 查询词时不同 URL 不走缓存

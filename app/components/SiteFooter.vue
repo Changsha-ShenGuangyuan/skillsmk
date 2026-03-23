@@ -52,7 +52,7 @@ watch(i18n.locale, async (lang) => {
             <h4 class="footer-link-title">{{ t('footer.quickLinks', '快速链接') }}</h4>
             <ul class="footer-link-list">
               <li><NuxtLink :to="localePath('/search')" class="footer-link"><span class="link-arrow">›</span> {{ t('footer.search', '搜索') }}</NuxtLink></li>
-              <li><NuxtLink :to="localePath('/leaderboard')" class="footer-link"><span class="link-arrow">›</span> {{ t('footer.leaderboard', '排行榜') }}</NuxtLink></li>
+              <li><NuxtLink :to="localePath('/rankings')" class="footer-link"><span class="link-arrow">›</span> {{ t('footer.leaderboard', '排行榜') }}</NuxtLink></li>
               <li><NuxtLink :to="localePath('/categories')" class="footer-link"><span class="link-arrow">›</span> {{ t('footer.categories', '分类') }} <span class="link-badge">NEW</span></NuxtLink></li>
             </ul>
           </div>

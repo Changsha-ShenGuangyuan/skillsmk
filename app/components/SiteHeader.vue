@@ -108,7 +108,7 @@ function handleNavLinkClick() {
         <NuxtLink :to="localePath('/')" class="header-link">{{ t('header.home', '主页') }}</NuxtLink>
         <NuxtLink :to="localePath('/search')" class="header-link">{{ t('header.search', '搜索') }}</NuxtLink>
         <NuxtLink :to="localePath('/categories')" class="header-link">{{ t('header.categories', '分类') }}</NuxtLink>
-        <NuxtLink :to="localePath('/leaderboard')" class="header-link">{{ t('header.leaderboard', '排名') }}</NuxtLink>
+        <NuxtLink :to="localePath('/rankings')" class="header-link">{{ t('header.leaderboard', '排名') }}</NuxtLink>
         <a href="#" class="header-link" @click="handleScrollToBottom">{{ t('header.about', '关于') }}</a>
         <a href="#faq" class="header-link" @click="e => handleHashLink(e, 'faq')">{{ t('header.faq', 'FAQ') }}</a>
       </nav>
@@ -147,7 +147,7 @@ function handleNavLinkClick() {
         <NuxtLink :to="localePath('/categories')" class="mobile-nav-link" @click="handleNavLinkClick">
           <span class="mobile-nav-icon">▸</span> {{ t('header.categories', '分类') }}
         </NuxtLink>
-        <NuxtLink :to="localePath('/leaderboard')" class="mobile-nav-link" @click="handleNavLinkClick">
+        <NuxtLink :to="localePath('/rankings')" class="mobile-nav-link" @click="handleNavLinkClick">
           <span class="mobile-nav-icon">▸</span> {{ t('header.leaderboardFull', '排行榜') }}
         </NuxtLink>
         <div class="mobile-nav-divider" />

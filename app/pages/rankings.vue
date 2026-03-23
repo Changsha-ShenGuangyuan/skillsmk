@@ -16,7 +16,7 @@ useSeoMeta({
   ogTitle:     () => t('meta.lb.title',       'Skill Hall of Fame | SKILLSMK'),
   description: () => t('meta.lb.description', 'Explore the most popular Agent Skills ranked by GitHub Stars.'),
   ogDescription:() => t('meta.lb.description','Explore the most popular Agent Skills ranked by GitHub Stars.'),
-  ogUrl:       `${siteUrl}/leaderboard`,
+  ogUrl:       `${siteUrl}/rankings`,
   ogImage:     `${siteUrl}/og-image.png`,
   ogType:      'website',
   ogSiteName:  'SKILLSMK',
@@ -26,17 +26,17 @@ useSeoMeta({
 })
 useHead({
   link: [
-    { rel: 'canonical',  href: `${siteUrl}/leaderboard` },
-    { rel: 'alternate', hreflang: 'en',        href: `${siteUrl}/leaderboard` },
-    { rel: 'alternate', hreflang: 'zh',        href: `${siteUrl}/zh/leaderboard` },
-    { rel: 'alternate', hreflang: 'ja',        href: `${siteUrl}/ja/leaderboard` },
-    { rel: 'alternate', hreflang: 'ko',        href: `${siteUrl}/ko/leaderboard` },
-    { rel: 'alternate', hreflang: 'de',        href: `${siteUrl}/de/leaderboard` },
-    { rel: 'alternate', hreflang: 'fr',        href: `${siteUrl}/fr/leaderboard` },
-    { rel: 'alternate', hreflang: 'es',        href: `${siteUrl}/es/leaderboard` },
-    { rel: 'alternate', hreflang: 'ar',        href: `${siteUrl}/ar/leaderboard` },
-    { rel: 'alternate', hreflang: 'pt',        href: `${siteUrl}/pt/leaderboard` },
-    { rel: 'alternate', hreflang: 'x-default', href: `${siteUrl}/leaderboard` },
+    { rel: 'canonical',  href: `${siteUrl}/rankings` },
+    { rel: 'alternate', hreflang: 'en',        href: `${siteUrl}/rankings` },
+    { rel: 'alternate', hreflang: 'zh',        href: `${siteUrl}/zh/rankings` },
+    { rel: 'alternate', hreflang: 'ja',        href: `${siteUrl}/ja/rankings` },
+    { rel: 'alternate', hreflang: 'ko',        href: `${siteUrl}/ko/rankings` },
+    { rel: 'alternate', hreflang: 'de',        href: `${siteUrl}/de/rankings` },
+    { rel: 'alternate', hreflang: 'fr',        href: `${siteUrl}/fr/rankings` },
+    { rel: 'alternate', hreflang: 'es',        href: `${siteUrl}/es/rankings` },
+    { rel: 'alternate', hreflang: 'ar',        href: `${siteUrl}/ar/rankings` },
+    { rel: 'alternate', hreflang: 'pt',        href: `${siteUrl}/pt/rankings` },
+    { rel: 'alternate', hreflang: 'x-default', href: `${siteUrl}/rankings` },
   ],
 })
 

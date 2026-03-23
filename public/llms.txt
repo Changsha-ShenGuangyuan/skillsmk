@@ -17,7 +17,7 @@ SKILL.md is an open standard for defining AI agent capabilities as portable, com
 - Homepage: https://www.skillsmk.com/
 - Skill List: https://www.skillsmk.com/search
 - Categories: https://www.skillsmk.com/categories
-- Leaderboard: https://www.skillsmk.com/leaderboard
+- Rankings: https://www.skillsmk.com/rankings
 
 ## Full Skills Directory (for AI engines)
 > Complete machine-readable list of all skills with name, description, GitHub URL, and download links.
