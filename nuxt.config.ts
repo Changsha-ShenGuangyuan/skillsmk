@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     apiBaseUrl: '',    // 由 NUXT_API_BASE_URL 自动注入
     // 公共变量：SSR + 客户端均可使用
     public: {
-      siteUrl: 'https://www.skillsmk.com', // 由 NUXT_PUBLIC_SITE_URL 自动注入
+      siteUrl: 'https://skillsmk.com', // 由 NUXT_PUBLIC_SITE_URL 自动注入
     },
   },
 
