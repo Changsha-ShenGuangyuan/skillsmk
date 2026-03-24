@@ -30,5 +30,3 @@ Allow: /
 # 告知搜索引擎 sitemap 位置
 Sitemap: https://www.skillsmk.com/sitemap.xml
 
-# AI 爬虫内容概述文件
-LLMs: https://www.skillsmk.com/llms.txt
