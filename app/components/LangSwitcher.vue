@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { LANGS, useI18n, loadModule } from '~/i18n'
 
 const { locale, setLocale } = useI18n()
@@ -8,17 +8,24 @@ const selected = ref(LANGS.find(l => l.value === locale.value) ?? LANGS[0]!)
 const open = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
-// 切换语言：先加载该语言的 common 模块，再正式切换
+// 切换语言：先加载该语言的 common 模块，再正式切换，切换后恢复滚动位置
 async function select(lang: typeof LANGS[number]) {
   if (selected.value.value === lang.value) {
     open.value = false
     return
   }
+  // 记录切换前的滚动位置，切换后恢复（避免路由变化触发 scrollBehavior 置顶）
+  const savedScrollY = window.scrollY
   // 预加载 common，确保切换后全局公用翻译立即可用
   await loadModule(lang.value, 'common')
   await setLocale(lang.value)
   selected.value = lang
   open.value = false
+  // 路由完成渲染后恢复滚动位置
+  await nextTick()
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: savedScrollY, behavior: 'instant' })
+  })
 }
 
 function toggleDropdown() {

@@ -8,9 +8,17 @@ const i18n = useI18n()
 const t    = i18n.t
 const catStore = useCategoryStore()
 
-// i18n 模块懒加载（客户端）
+// i18n 模块懒加载（客户端）+ 数据兜底加载
 onMounted(async () => {
   await loadModule(i18n.locale.value, 'leaderboard')
+  // 兜底：若 SSR payload 中 Top10 数据为空，客户端主动重新获取
+  if (!top10Data.value || top10Data.value.code !== 0 || !top10Data.value.data?.length) {
+    await refreshTop10()
+  }
+  // 兜底：若分类数据为空，补充加载（用于分类标签显示）
+  if (catStore.categories.value.length === 0) {
+    await catStore.ensureLoaded(i18n.locale.value)
+  }
 })
 watch(i18n.locale, async (lang) => {
   await loadModule(lang, 'leaderboard')
@@ -20,7 +28,7 @@ const router     = useRouter()
 const localePath = useLocalePath()
 
 // 热门 Top10：useAsyncData 在服务端获取，支持 SWR 缓存
-const { data: top10Data } = await useAsyncData('star-chart-top10', () =>
+const { data: top10Data, refresh: refreshTop10 } = await useAsyncData('star-chart-top10', () =>
   fetchSkillsTop({ per_page: 10 })
 )
 const top10 = computed(() =>

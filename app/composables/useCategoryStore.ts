@@ -25,21 +25,24 @@ export function getColorByIndex(idx: number) {
   return PALETTE[((idx % PALETTE.length) + PALETTE.length) % PALETTE.length] as { bg: string; text: string }
 }
 
-// 模块级：跨所有 useCategoryStore() 实例共享，防止并发请求竞态
-let _inFlightPromise: Promise<void> | null = null
-
 export function useCategoryStore() {
   // useState 保证跨组件单例（同一个 key 只有一份状态）
   const categories   = useState<ApiCategory[]>('global-categories', () => [])
   const isLoaded     = useState<boolean>('global-categories-loaded', () => false)
   // 记录上一次请求时使用的 locale，避免重复请求相同语言
   const loadedLocale = useState<string>('global-categories-locale', () => '')
+  // 使用 useState 存储进行中的 Promise，确保同一请求上下文内防止并发重复请求
+  // 注意：useState 在 SSR 是请求隔离的，不会跨请求共享
+  const _inFlight    = useState<boolean>('global-categories-inflight', () => false)
+
+  // 模块级 Promise，仅用于客户端并发去重（客户端只有一个上下文，是安全的）
+  let _clientPromise: Promise<void> | null = null
 
   /**
    * 加载分类数据
    * - 首次调用时承载所有翻译
    * - 语言切换时，locale 与上次不同则重新请求，更新翻译缓存
-   * - 并发调用时共享同一个 in-flight Promise，避免发出多个重复请求
+   * - 并发调用时共享同一个 in-flight Promise 或标志位，避免发出多个重复请求
    */
   async function ensureLoaded(locale?: string) {
     const lang = locale || 'en'
@@ -50,25 +53,42 @@ export function useCategoryStore() {
       isLoaded.value = true  // 修复标志位
       return
     }
-    // 如果已有请求在进行，等待它完成（而不是发出新请求）
-    if (_inFlightPromise) return _inFlightPromise
 
-    _inFlightPromise = (async () => {
-      try {
-        const res = await fetchCategories(lang) // 传入当前语言
-        if (res.code === 0) {
-          categories.value   = res.data
-          isLoaded.value     = true
-          loadedLocale.value = lang
+    // 客户端：使用模块级 Promise 防止并发重复请求（客户端只有一个进程上下文）
+    if (import.meta.client) {
+      if (_clientPromise) return _clientPromise
+      _clientPromise = (async () => {
+        try {
+          const res = await fetchCategories(lang)
+          if (res.code === 0) {
+            categories.value   = res.data
+            isLoaded.value     = true
+            loadedLocale.value = lang
+          }
+        } catch (e) {
+          console.error('[useCategoryStore] 加载分类失败', e)
+        } finally {
+          _clientPromise = null
         }
-      } catch (e) {
-        console.error('[useCategoryStore] 加载分类失败', e)
-      } finally {
-        _inFlightPromise = null  // 请求完成后清空，下次语言切换时可重新触发
-      }
-    })()
+      })()
+      return _clientPromise
+    }
 
-    return _inFlightPromise
+    // 服务端：使用 useState 标志位防止同一请求上下文内并发
+    if (_inFlight.value) return
+    _inFlight.value = true
+    try {
+      const res = await fetchCategories(lang)
+      if (res.code === 0) {
+        categories.value   = res.data
+        isLoaded.value     = true
+        loadedLocale.value = lang
+      }
+    } catch (e) {
+      console.error('[useCategoryStore] 加载分类失败', e)
+    } finally {
+      _inFlight.value = false
+    }
   }
 
   /**

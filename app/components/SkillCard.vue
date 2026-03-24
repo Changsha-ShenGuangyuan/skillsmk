@@ -38,7 +38,6 @@ const props = defineProps({
 
 
 function handleCardClick() {
-  window.scrollTo({ top: 0, behavior: 'instant' })
   // 用 history state 传递 UUID，不显示在 URL 中
   router.push({
     path: localePath(`/skill/${props.skill.id}`),

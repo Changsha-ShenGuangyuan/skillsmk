@@ -37,12 +37,7 @@ export default defineNuxtConfig({
           type: 'image/svg+xml',
           href: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 28,8.5 28,23.5 16,30 4,23.5 4,8.5' fill='none' stroke='%232563eb' stroke-width='1.5'/%3E%3Cpolygon points='16,8 23,12 23,20 16,24 9,20 9,12' fill='rgba(37,99,235,0.12)' stroke='%232563eb' stroke-width='1'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%232563eb'/%3E%3C/svg%3E",
         },
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap',
-        },
+
       ],
       script: [
         {

@@ -10,9 +10,13 @@ const i18n    = useI18n()
 const { t }   = i18n
 const catStore = useCategoryStore()
 
-// i18n 模块加载（客户端）
+// i18n 模块加载（客户端）+ 分类数据兜底加载
 onMounted(async () => {
   await loadModule(i18n.locale.value, 'categories')
+  // 兜底：若 SSR payload 中分类数据为空（SWR 缓存场景 / API 超时），则客户端主动补充加载
+  if (catStore.categories.value.length === 0) {
+    await catStore.ensureLoaded(i18n.locale.value)
+  }
 })
 watch(i18n.locale, async (lang) => {
   await loadModule(lang, 'categories')

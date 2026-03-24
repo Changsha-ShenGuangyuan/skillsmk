@@ -4,7 +4,7 @@
    调色：白底黑字，中性灰层次，黑色主按钮
    风格参考：mcpmarket.com · Vercel · Linear (Light Mode)
 ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 
 :root {
   /* -- 背景层次（既不刺眼又有层次感） -- */
@@ -44,12 +44,12 @@
      font-sans    → 正文、导航、描述
      font-mono    → badge、标签、数字、代码
      font-display → 大标题（h1/h2） */
-  /* 中文 fallback 独立列出，避免展示中文时用 Latin 字体降级导致锥齿 */
-  --font-sans:    'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'PingFang SC',
+  /* 字体：直接使用系统内置字体，无需加载在线字体 */
+  --font-sans:    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
                   'Microsoft YaHei', 'Hiragino Sans GB', system-ui, sans-serif;
-  --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
-                  Consolas, 'Courier New', monospace;
-  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'PingFang SC',
+  --font-mono:    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco,
+                  Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
                   'Microsoft YaHei', system-ui, sans-serif;
 
   /* ── 行高 ── */
