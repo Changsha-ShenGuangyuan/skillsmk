@@ -1,49 +1,78 @@
 /**
- * useMarkdownRenderer
- * 封装 highlight.js 注册 + marked 自定义 renderer
- * 供需要渲染 Markdown 的组件复用
+ * useMarkdownRenderer — 动态导入版
+ *
+ * highlight.js（264KB）和 marked（153KB）改为动态异步导入，
+ * 让这两个大库从主 chunk 中完全剥离，只在 skill 详情页首次调用时懒加载，
+ * 其他页面（首页、排行榜等）完全不加载这两个库，显著减少初始 JS 体积。
  */
-import { marked } from 'marked'
-import hljs from 'highlight.js/lib/core'
-import 'highlight.js/styles/github-dark.css'
 
-import langBash       from 'highlight.js/lib/languages/bash'
-import langPython     from 'highlight.js/lib/languages/python'
-import langJavascript from 'highlight.js/lib/languages/javascript'
-import langTypescript from 'highlight.js/lib/languages/typescript'
-import langJson       from 'highlight.js/lib/languages/json'
-import langYaml       from 'highlight.js/lib/languages/yaml'
-import langMarkdown   from 'highlight.js/lib/languages/markdown'
-import langXml        from 'highlight.js/lib/languages/xml'
-import langPlaintext  from 'highlight.js/lib/languages/plaintext'
+// 懒初始化：只在第一次调用时执行，后续复用同一个 Promise
+let _markedPromise: Promise<typeof import('marked').marked> | null = null
 
-// 只注册 SKILL.md 中常见语言（避免全量打包）
-hljs.registerLanguage('bash',       langBash)
-hljs.registerLanguage('sh',         langBash)
-hljs.registerLanguage('shell',      langBash)
-hljs.registerLanguage('python',     langPython)
-hljs.registerLanguage('javascript', langJavascript)
-hljs.registerLanguage('js',         langJavascript)
-hljs.registerLanguage('typescript', langTypescript)
-hljs.registerLanguage('ts',         langTypescript)
-hljs.registerLanguage('json',       langJson)
-hljs.registerLanguage('yaml',       langYaml)
-hljs.registerLanguage('yml',        langYaml)
-hljs.registerLanguage('markdown',   langMarkdown)
-hljs.registerLanguage('xml',        langXml)
-hljs.registerLanguage('html',       langXml)
-hljs.registerLanguage('plaintext',  langPlaintext)
+async function getMarked() {
+  if (!_markedPromise) {
+    _markedPromise = (async () => {
+      // 动态导入 marked 和 highlight.js，Vite 会自动拆分为独立 chunk
+      const [{ marked }, hljs, langBash, langPython, langJs, langTs, langJson, langYaml, langMd, langXml, langPlaintext] =
+        await Promise.all([
+          import('marked'),
+          import('highlight.js/lib/core'),
+          import('highlight.js/lib/languages/bash'),
+          import('highlight.js/lib/languages/python'),
+          import('highlight.js/lib/languages/javascript'),
+          import('highlight.js/lib/languages/typescript'),
+          import('highlight.js/lib/languages/json'),
+          import('highlight.js/lib/languages/yaml'),
+          import('highlight.js/lib/languages/markdown'),
+          import('highlight.js/lib/languages/xml'),
+          import('highlight.js/lib/languages/plaintext'),
+        ])
 
-// 自定义 renderer：高亮代码块 + 语言标识栏
-const renderer = new marked.Renderer()
-renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
-  const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
-  const highlighted = hljs.highlight(text, { language }).value
-  const langLabel = lang || ''
-  return `<div class="md-code-block">${
-    langLabel ? `<div class="md-code-lang">${langLabel}</div>` : ''
-  }<pre><code class="hljs language-${language}">${highlighted}</code></pre></div>`
+      // 动态注入 highlight.js 的 CSS（客户端）
+      if (import.meta.client) {
+        await import('highlight.js/styles/github-dark.css')
+      }
+
+      // 注册语言（只注册 SKILL.md 中常见语言）
+      const h = hljs.default
+      h.registerLanguage('bash',       langBash.default)
+      h.registerLanguage('sh',         langBash.default)
+      h.registerLanguage('shell',      langBash.default)
+      h.registerLanguage('python',     langPython.default)
+      h.registerLanguage('javascript', langJs.default)
+      h.registerLanguage('js',         langJs.default)
+      h.registerLanguage('typescript', langTs.default)
+      h.registerLanguage('ts',         langTs.default)
+      h.registerLanguage('json',       langJson.default)
+      h.registerLanguage('yaml',       langYaml.default)
+      h.registerLanguage('yml',        langYaml.default)
+      h.registerLanguage('markdown',   langMd.default)
+      h.registerLanguage('xml',        langXml.default)
+      h.registerLanguage('html',       langXml.default)
+      h.registerLanguage('plaintext',  langPlaintext.default)
+
+      // 自定义 renderer：高亮代码块 + 语言标识栏
+      const renderer = new marked.Renderer()
+      renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
+        const language = lang && h.getLanguage(lang) ? lang : 'plaintext'
+        const highlighted = h.highlight(text, { language }).value
+        const langLabel = lang || ''
+        return `<div class="md-code-block">${
+          langLabel ? `<div class="md-code-lang">${langLabel}</div>` : ''
+        }<pre><code class="hljs language-${language}">${highlighted}</code></pre></div>`
+      }
+      marked.use({ renderer })
+
+      return marked
+    })()
+  }
+  return _markedPromise
 }
-marked.use({ renderer })
 
-export { marked, hljs }
+/**
+ * 渲染 Markdown 字符串为 HTML（异步，首次调用时懒加载依赖库）
+ */
+export async function marked(src: string): Promise<string> {
+  const markedFn = await getMarked()
+  return markedFn(src) as string
+}

@@ -3,18 +3,18 @@
  *
  * 路由匹配规则：/api/proxy/** → 转发至真实后端 API
  *
- * 服务端会自动：
- *   1. 读取 query / body 参数
- *   2. 调用 buildSignHeaders() 生成三个签名请求头
- *   3. 将请求转发至 NUXT_API_BASE_URL + path
- *   4. 原样返回后端响应
- *
- * 优化：监听客户端连接关闭事件，若客户端中止（如快速翻页被 AbortController 取消），
- * 同步中止对上游 API 的转发请求，避免后端收到多余的请求触发 429。
+ * 优化：
+ *  - GET 请求使用 Nitro 服务端缓存（60s），命中缓存时直接返回，无需等待上游 API
+ *  - 监听客户端连接关闭事件，若客户端中止（如快速翻页被 AbortController 取消），
+ *    同步中止对上游 API 的转发请求，避免后端收到多余的请求触发 429
  */
 // buildSignHeaders 由 Nitro 从 server/utils/sign.ts 自动导入，无需显式 import
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+/**
+ * 处理单次代理请求的核心逻辑（GET / 非 GET 均走此函数）
+ */
+async function handleProxy(event: H3Event) {
   const config  = useRuntimeConfig(event)
   const secret  = config.apiSignSecret as string
   const baseUrl = (config.apiBaseUrl as string).replace(/\/$/, '')
@@ -90,4 +90,25 @@ export default defineEventHandler(async (event) => {
     if (e?.name === 'AbortError' || e?.cause?.name === 'AbortError') return
     throw e
   }
+}
+
+// ── GET 请求：加 60 秒服务端缓存，减少对上游 API 的重复调用 ────────────────
+const cachedGetHandler = defineCachedEventHandler(
+  (event: H3Event) => handleProxy(event),
+  {
+    maxAge: 60,                                      // 缓存 60 秒
+    // 缓存 key = 完整请求路径（含 query string），不同参数互不影响
+    getKey: (event: H3Event) => event.path,
+    // 仅缓存服务端数据，不依赖请求头（Headers）
+    varies: [],
+  }
+)
+
+// ── 主入口：区分 GET 和非 GET 请求 ────────────────────────────────────────────
+export default defineEventHandler((event: H3Event) => {
+  // POST/PUT/DELETE/PATCH 等写操作不走缓存，直接透传
+  if (event.method !== 'GET') {
+    return handleProxy(event)
+  }
+  return cachedGetHandler(event)
 })

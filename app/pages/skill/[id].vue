@@ -6,7 +6,7 @@ import { useCategoryStore } from '~/composables/useCategoryStore'
 import { useSkillShare }    from '~/composables/useSkillShare'
 import { useSkillDownload } from '~/composables/useSkillDownload'
 import { useZipTree }       from '~/composables/useZipTree'
-// Markdown
+// marked 改为动态导入版：highlight.js+marked 只在本页实际需要时才加载
 import { marked } from '~/composables/useMarkdownRenderer'
 import { fetchSkillDetail, fetchSkillDetailByKey, fetchSkillDetailAuto } from '~/composables/useSkillsApi'
 import type { ApiSkillDetail } from '~/composables/useSkillsApi'

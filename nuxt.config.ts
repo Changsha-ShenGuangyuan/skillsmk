@@ -98,17 +98,33 @@ export default defineNuxtConfig({
     },
   },
 
-  // Vite 构建配置 (从 vite.config.ts 迁移)
-  vite: {
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            highlight: ['highlight.js'],
-            markdown: ['marked', 'marked-highlight'],
-          },
+  // Nitro 服务端配置
+  nitro: {
+    // 对所有公共静态资源启用 gzip + brotli 压缩
+    // JS chunk 和 JSON 文件体积可减少 60-80%，显著降低传输时间
+    compressPublicAssets: { gzip: true, brotli: true },
+
+    // 强化静态资源路由规则
+    routeRules: {
+      // Vite 构建产物带内容哈希，可安全设置 1 年强缓存
+      '/_nuxt/**': {
+        headers: {
+          'Cache-Control': 'public, max-age=31536000, immutable',
         },
       },
+      // i18n 消息文件：内容可能随版本变化，设 1 小时强缓存
+      // 浏览器命中后直接读缓存（~18s “ messages.json 接近 0ms ）
+      '/_nuxt/builds/meta/**': {
+        headers: { 'Cache-Control': 'public, max-age=3600' },
+      },
+    },
+  },
+
+  // Vite 构建配置
+  vite: {
+    build: {
+      // highlight.js 和 marked 已改为动态 import，Vite 会自动拆分为独立 chunk
+      // 移除 manualChunks 避免强制打包导致大刘分头部 chunk
       chunkSizeWarningLimit: 800,
     },
   },

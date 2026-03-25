@@ -27,8 +27,9 @@ module.exports = {
   apps: [{
     name: 'skillsmk',
     script: './.output/server/index.mjs',
-    exec_mode: 'fork', // Windows 下建议用 fork 模式
-    instances: 1,
+    // cluster 模式：利用所有 CPU 核心，多个并发请求并行处理，避免单进程排队
+    exec_mode: 'cluster',
+    instances: 'max',
     env: {
       NODE_ENV: 'production',
       PORT: 3000,
