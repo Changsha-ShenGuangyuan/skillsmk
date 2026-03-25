@@ -114,35 +114,55 @@ function goToAll() {
 
       <!-- 分类文件夹网格 -->
       <div class="cov-folder-grid">
-        <div
-          v-for="(cls, idx) in catStore.categories.value"
-          :key="cls.id"
-          class="cov-folder"
-          :class="`cov-folder--delay-${Math.min(idx, 9)}`"
-          @click="goToCategory(cls.id)"
-          @keydown.enter.prevent="goToCategory(cls.id)"
-          @keydown.space.prevent="goToCategory(cls.id)"
-          role="button"
-          tabindex="0"
-          :aria-label="catStore.getCategoryName(cls.id, i18n.locale.value)"
-        >
-          <!-- 文件夹耳朵 -->
-          <div class="cov-folder-tab" />
-          <!-- 文件夹主体 -->
-          <div class="cov-folder-body">
-            <!-- 文件夹图标 -->
-            <svg class="cov-folder-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
-            <!-- 分类名 -->
-            <span class="cov-folder-name">{{ catStore.getCategoryName(cls.id, i18n.locale.value) }}</span>
-            <!-- 数量标签（直接使用后端技能池总数） -->
-            <span class="cov-folder-count" v-if="(cls.skills_count ?? 0) > 0">
-              {{ cls.skills_count }}
-              <span class="cov-folder-unit">{{ t('cat.overview.skills', 'skills') }}</span>
-            </span>
+        <!-- 已加载：显示真实内容 -->
+        <template v-if="catStore.categories.value.length > 0">
+          <div
+            v-for="(cls, idx) in catStore.categories.value"
+            :key="cls.id"
+            class="cov-folder"
+            :class="`cov-folder--delay-${Math.min(idx, 9)}`"
+            @click="goToCategory(cls.id)"
+            @keydown.enter.prevent="goToCategory(cls.id)"
+            @keydown.space.prevent="goToCategory(cls.id)"
+            role="button"
+            tabindex="0"
+            :aria-label="catStore.getCategoryName(cls.id, i18n.locale.value)"
+          >
+            <!-- 文件夹耳朵 -->
+            <div class="cov-folder-tab" />
+            <!-- 文件夹主体 -->
+            <div class="cov-folder-body">
+              <!-- 文件夹图标 -->
+              <svg class="cov-folder-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <!-- 分类名 -->
+              <span class="cov-folder-name">{{ catStore.getCategoryName(cls.id, i18n.locale.value) }}</span>
+              <!-- 数量标签 -->
+              <span class="cov-folder-count" v-if="(cls.skills_count ?? 0) > 0">
+                {{ cls.skills_count }}
+                <span class="cov-folder-unit">{{ t('cat.overview.skills', 'skills') }}</span>
+              </span>
+            </div>
           </div>
-        </div>
+        </template>
+
+        <!-- 加载中：18 个文件夹骨架屏 -->
+        <template v-else>
+          <div
+            v-for="i in 18"
+            :key="`sk-cat-${i}`"
+            class="cov-folder cov-folder--skeleton is-visible"
+            aria-hidden="true"
+          >
+            <div class="cov-folder-tab sk-block" />
+            <div class="cov-folder-body">
+              <div class="sk-block sk-icon" />
+              <div class="sk-block sk-text" />
+              <div class="sk-block sk-count" />
+            </div>
+          </div>
+        </template>
       </div>
     </div>
   </section>
@@ -377,7 +397,62 @@ function goToAll() {
   letter-spacing: 0.04em;
 }
 
-/* ── 响应式 ── */
+/* ── 骨架屏公用动画 ── */
+@keyframes sk-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* 骨架块基类 */
+.sk-block {
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    var(--border)      50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+
+/* 骨架文件夹耳朵 */
+.cov-folder--skeleton .cov-folder-tab.sk-block {
+  width: 40%;
+  height: 6px;
+  margin-left: 10px;
+  opacity: 0.6;
+}
+
+/* 骨架文件夹主体展开 */
+.cov-folder--skeleton .cov-folder-body {
+  pointer-events: none;
+  cursor: default;
+}
+
+/* 图标占位 */
+.sk-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  opacity: 0.5;
+}
+
+/* 分类名占位 */
+.sk-text {
+  width: 70%;
+  height: 12px;
+  opacity: 0.55;
+}
+
+/* 数量占位 */
+.sk-count {
+  width: 45%;
+  height: 18px;
+  opacity: 0.4;
+}
+
+/* 响应式 */
 @media (max-width: 768px) {
   .cov-folder-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
   .cov-header      { flex-direction: column; align-items: flex-start; gap: 12px; }

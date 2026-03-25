@@ -117,6 +117,11 @@ export default defineNuxtConfig({
       '/_nuxt/builds/meta/**': {
         headers: { 'Cache-Control': 'public, max-age=3600' },
       },
+      // skill 详情 API：5 分钟 SWR（Nitro 层缓存，减少穿透到上游 API）
+      '/api/proxy/skills/*': { swr: 300 },
+      // 列表 / 排行榜 API：2 分钟 SWR
+      '/api/proxy/skills': { swr: 120 },
+      '/api/proxy/skills-top': { swr: 120 },
     },
   },
 
