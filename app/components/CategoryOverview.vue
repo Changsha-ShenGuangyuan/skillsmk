@@ -10,13 +10,15 @@ const i18n    = useI18n()
 const { t }   = i18n
 const catStore = useCategoryStore()
 
-// i18n 模块加载（客户端）+ 分类数据兜底加载
+// 分类加载状态：初始为 true，确保首次访问立即显示骨架屏
+const isLoadingCats = ref(true)
+
+// i18n 模块加载（客户端）+ 分类数据主动加载
 onMounted(async () => {
   await loadModule(i18n.locale.value, 'categories')
-  // 兜底：若 SSR payload 中分类数据为空（SWR 缓存场景 / API 超时），则客户端主动补充加载
-  if (catStore.categories.value.length === 0) {
-    await catStore.ensureLoaded(i18n.locale.value)
-  }
+  // 主动加载分类（不依赖 length 判断，确保数据最新）
+  await catStore.ensureLoaded(i18n.locale.value)
+  isLoadingCats.value = false  // 数据就绪，切换为真实内容
 })
 watch(i18n.locale, async (lang) => {
   await loadModule(lang, 'categories')
@@ -115,7 +117,7 @@ function goToAll() {
       <!-- 分类文件夹网格 -->
       <div class="cov-folder-grid">
         <!-- 已加载：显示真实内容 -->
-        <template v-if="catStore.categories.value.length > 0">
+        <template v-if="!isLoadingCats">
           <div
             v-for="(cls, idx) in catStore.categories.value"
             :key="cls.id"

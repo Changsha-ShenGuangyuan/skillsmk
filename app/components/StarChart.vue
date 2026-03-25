@@ -27,13 +27,17 @@ watch(i18n.locale, async (lang) => {
 const router     = useRouter()
 const localePath = useLocalePath()
 
-// 热门 Top10：useAsyncData 在服务端获取，支持 SWR 缓存
-const { data: top10Data, refresh: refreshTop10 } = await useAsyncData('star-chart-top10', () =>
-  fetchSkillsTop({ per_page: 10 })
+// 热门 Top10：改为客户端获取（server: false），服务端立即发骨架 HTML
+const { data: top10Data, status: top10Status, refresh: refreshTop10 } = await useAsyncData('star-chart-top10', () =>
+  fetchSkillsTop({ per_page: 10 }),
+  { server: false, lazy: true }
 )
 const top10 = computed(() =>
   top10Data.value?.code === 0 ? top10Data.value.data : []
 )
+
+// status 为 'idle' 或 'pending' 时显示骨架（idle=客户端尚未开始请求，pending=请求中）
+const isLoadingChart = computed(() => top10Status.value === 'idle' || top10Status.value === 'pending')
 
 // 从 Store 读取分类名称和颜色
 const getCatName  = (categoryId: number) => catStore.getCategoryName(categoryId, i18n.locale.value)
@@ -84,6 +88,7 @@ function triggerAll() {
 
 // 点击跳转
 const handleClick = (id: string) => router.push(localePath(`/skill/${id}`))
+
 </script>
 
 <template>
@@ -123,6 +128,19 @@ const handleClick = (id: string) => router.push(localePath(`/skill/${id}`))
 
         <!-- 图表行列表 -->
         <div class="sc-rows">
+          <!-- 加载中：骨架屏占位 -->
+          <template v-if="isLoadingChart">
+            <div v-for="i in 10" :key="i" class="sc-row-skeleton">
+              <div class="sc-sk-rank"></div>
+              <div class="sc-sk-info">
+                <div class="sc-sk-line sc-sk-line--name"></div>
+              </div>
+              <div class="sc-sk-pill"></div>
+              <div class="sc-sk-stars"></div>
+            </div>
+          </template>
+          <!-- 数据就绪：真实内容 -->
+          <template v-else>
           <div
             v-for="(skill, idx) in top10"
             :key="skill.skill_key"
@@ -178,6 +196,7 @@ const handleClick = (id: string) => router.push(localePath(`/skill/${id}`))
             <!-- hover 时的行高亮线 -->
             <div class="sc-row-line" />
           </div>
+          </template>
         </div>
       </div>
     </div>
@@ -510,4 +529,40 @@ const handleClick = (id: string) => router.push(localePath(`/skill/${id}`))
   .sc-row-left   { flex: none; width: 100%; }
   .sc-row-right  { width: 100%; justify-content: flex-start; }
 }
+
+/* ── StarChart 骨架屏 ─────────────────────────────────────────── */
+.sc-row-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+/* 骨架公共波纹 */
+@keyframes sc-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.sc-sk-rank,
+.sc-sk-line,
+.sc-sk-pill,
+.sc-sk-stars {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    var(--bg-secondary) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: sc-shimmer 1.4s infinite;
+  opacity: 0.75;
+}
+
+.sc-sk-rank   { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; }
+.sc-sk-info   { flex: 1; min-width: 0; }
+.sc-sk-line--name { height: 13px; width: 55%; }
+.sc-sk-pill   { width: 64px; height: 20px; border-radius: 6px; flex-shrink: 0; }
+.sc-sk-stars  { width: 44px; height: 14px; flex-shrink: 0; }
 </style>

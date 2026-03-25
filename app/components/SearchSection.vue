@@ -51,19 +51,24 @@ function goToSearch() {
   router.push(localePath('/search'))
 }
 
-// ── 服务端渲染初始数据（useAsyncData，与首页 SWR 缓存配合）──
-// 首次访问首页时服务端执行接口请求，结果嵌入 HTML；用户搜索/筛选时再走客户端请求
-const { data: _initData } = await useAsyncData('search-section-skills', () =>
-  fetchSkills({ page: 1, per_page: 9 })
+// ── 客户端初始数据获取（server: false，让服务端立即发骨架 HTML）──
+// 不在服务端等待 API，客户端水合后立即显示骨架，数据返回后切换
+const { data: _initData, status: _initStatus } = await useAsyncData('search-section-skills', () =>
+  fetchSkills({ page: 1, per_page: 9 }),
+  { server: false, lazy: true }
 )
 const _init = _initData.value?.code === 0 ? _initData.value : null
 
-// ── API 数据状态（从 SSR 数据初始化）──
+// ── API 数据状态（初始为空，客户端获取数据后填充）──
 const apiSkills   = ref<ApiSkill[]>(_init?.data ?? [])
-const totalSkills = ref(_init?.meta?.total ?? 0)  // 全站总量，来自首次 SSR 请求的 meta.total
-const isLoading   = ref(false)
+const totalSkills = ref(_init?.meta?.total ?? 0)
+// isLoading：idle/pending 时显示骨架，success/error 时显示内容
+// 注意：搜索/筛选触发 loadSkills() 时由 loadSkills 内部的 isLoading ref 接管
+const _initLoading = computed(() => _initStatus.value === 'idle' || _initStatus.value === 'pending')
+const _manualLoading = ref(false)
+const isLoading = computed(() => _initLoading.value || _manualLoading.value)
 
-// SPA 导航回返时同步初始数据
+// 客户端首次获取完成后同步数据
 watch(_initData, (val) => {
   if (val?.code === 0) {
     apiSkills.value   = val.data
@@ -77,7 +82,7 @@ let currentAbort: AbortController | null = null
 async function loadSkills() {
   currentAbort?.abort()
   currentAbort = new AbortController()
-  isLoading.value = true
+  _manualLoading.value = true  // 触发搜索/筛选时开启骨架
   try {
     const res = await fetchSkills({
       page: 1,
@@ -89,14 +94,14 @@ async function loadSkills() {
       apiSkills.value = res.data
     }
   } finally {
-    isLoading.value = false
+    _manualLoading.value = false  // 无论成功失败，关闭骨架
   }
 }
 
 // 离开首页时清理 in-flight 请求
 onUnmounted(() => currentAbort?.abort())
 
-// 搜索或分类变化时 debounce 加载（初始数据已由 SSR 提供，无需立即触发）
+// 搜索或分类变化时 debounce 加载
 let debounceTimer: ReturnType<typeof setTimeout>
 watch([query, activeCategory], () => {
   clearTimeout(debounceTimer)
@@ -194,15 +199,35 @@ const displaySkills = computed(() => apiSkills.value.map(toSkillCardProps))
           </div>
         </div>
         <div class="skills-grid">
+          <!-- 骨架卡片：isLoading 时展示，无论有无旧数据 -->
+          <template v-if="isLoading">
+            <div v-for="i in 9" :key="i" class="skill-card-skeleton">
+              <div class="sks-header">
+                <div class="sks-line sks-line--name"></div>
+                <div class="sks-tag"></div>
+              </div>
+              <div class="sks-body">
+                <div class="sks-line"></div>
+                <div class="sks-line"></div>
+                <div class="sks-line sks-line--short"></div>
+              </div>
+              <div class="sks-footer">
+                <div class="sks-stars"></div>
+              </div>
+            </div>
+          </template>
+          <!-- 真实卡片列表：数据返回后显示 -->
+          <template v-else>
           <SkillCard
             v-for="skill in displaySkills"
             :key="String(skill.id)"
             :skill="skill"
           />
+          </template>
         </div>
 
-        <!-- 空状态：0 条结果时显示，替代大片空白 -->
-        <div v-if="displaySkills.length === 0" class="skills-empty">
+        <!-- 空状态：0 条结果且非加载中时显示 -->
+        <div v-if="!isLoading && displaySkills.length === 0" class="skills-empty">
           <div class="skills-empty-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8" />
@@ -581,4 +606,68 @@ const displaySkills = computed(() => apiSkills.value.map(toSkillCardProps))
   .stat-label { font-size: 9px; letter-spacing: 0.05em; text-align: center; }
   .skills-grid { grid-template-columns: 1fr; }
 }
+
+/* ── SearchSection 骨架卡片 ──────────────────────────── */
+.skill-card-skeleton {
+  height: 220px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+@keyframes sks-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.sks-line,
+.sks-tag,
+.sks-stars {
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    var(--bg-secondary) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: sks-shimmer 1.4s infinite;
+  opacity: 0.8;
+}
+
+/* Header 区 */
+.sks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+  gap: 8px;
+}
+.sks-line--name { height: 13px; flex: 1; }
+.sks-tag        { width: 52px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+
+/* Body 区 */
+.sks-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 16px;
+}
+.sks-line        { height: 11px; width: 100%; }
+.sks-line--short { width: 60%; }
+
+/* Footer 区 */
+.sks-footer {
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.sks-stars { height: 11px; width: 36px; }
 </style>

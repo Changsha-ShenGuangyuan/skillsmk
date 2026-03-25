@@ -10,11 +10,15 @@ import { useZipTree }       from '~/composables/useZipTree'
 import { marked } from '~/composables/useMarkdownRenderer'
 import { fetchSkillDetail, fetchSkillDetailByKey, fetchSkillDetailAuto } from '~/composables/useSkillsApi'
 import type { ApiSkillDetail } from '~/composables/useSkillsApi'
+import { useSkillPreview } from '~/composables/useSkillPreview'
 
 const i18n = useI18n()
 const t    = i18n.t
 const catStore = useCategoryStore()
 const { public: { siteUrl } } = useRuntimeConfig()
+
+// ── 点击卡片传入的基础预览数据（可立即渲染，无需等待 API）──────────
+const { preview, clearPreview } = useSkillPreview()
 
 // i18n 模块加载（客户端）
 onMounted(async () => {
@@ -114,6 +118,28 @@ const markdownContent = computed<string>(() => {
   return ssrData.value?.markdownContent ?? '<p>技能不存在或已下架。</p>'
 })
 const isLoadingMd = computed<boolean>(() => status.value === 'pending')
+
+// API 加载完成后，清空预览缓存（避免切换到其他详情页时显示旧数据）
+watch(skill, (val) => {
+  if (val) clearPreview()
+})
+
+// ── 预览数据优先：API 未返回时用卡片数据立即渲染 ─────────────────
+// 标题：API 有数据用 API，否则用预览
+const displayName = computed(() => skill.value?.name ?? preview.value?.name ?? '')
+// 描述：优先 API，其次预览
+const displayDescription = computed(() => skill.value?.description ?? preview.value?.description ?? '')
+// 作者：优先 API owner 字段，其次预览 author
+const displayAuthor = computed(() => skill.value?.owner ?? preview.value?.author ?? '')
+// Stars：优先 API，其次预览
+const displayStars = computed(() => {
+  const s = skill.value?.repo_stars ?? preview.value?.stars ?? 0
+  return s >= 1000 ? (s / 1000).toFixed(1) + 'k' : s.toString()
+})
+// 分类 ID：优先 API，其次预览
+const displayCategoryId = computed(() => skill.value?.category_id ?? preview.value?.categoryId ?? null)
+// 是否处于「有预览但 API 还未返回」状态
+const isPreviewMode = computed(() => isLoadingMd.value && !!preview.value)
 
 // ── 其他 UI 状态 ref ──────────────────────────────────────────
 const isCopying          = ref(false)
@@ -346,7 +372,8 @@ watch(skill, (val, old) => {
 
 
 <template>
-  <div class="skill-detail" v-if="skill">
+  <!-- skill 有数据，或有卡片预览数据时，都直接展示页面主体 -->
+  <div class="skill-detail" v-if="skill || isPreviewMode">
     <!-- 文件标签头部 -->
     <div class="skill-detail-file-header">
       <div class="skill-detail-file-dots">
@@ -359,13 +386,13 @@ watch(skill, (val, old) => {
     </div>
     
     <div class="skill-detail-header">
-      <h3 class="skill-detail-title">{{ skill.name }}</h3>
+      <h3 class="skill-detail-title">{{ displayName }}</h3>
       
       <!-- 星级和类别区域 -->
       <div class="skill-detail-meta">
-        <div class="skill-detail-meta-item" v-if="skill.owner">
+        <div class="skill-detail-meta-item" v-if="displayAuthor">
           <span class="skill-detail-meta-label">{{ t('detail.author', '作者') }}：</span>
-          <span class="skill-detail-meta-value">{{ skill.owner }}</span>
+          <span class="skill-detail-meta-value">{{ displayAuthor }}</span>
         </div>
         
         <div class="skill-detail-meta-item">
@@ -384,7 +411,7 @@ watch(skill, (val, old) => {
               {{ tag.name }}
             </div>
           </div>
-          <span v-else class="skill-detail-meta-value">{{ catStore.getCategoryName(skill.category_id, i18n.locale.value) }}</span>
+          <span v-else class="skill-detail-meta-value">{{ catStore.getCategoryName(displayCategoryId ?? 0, i18n.locale.value) }}</span>
         </div>
 
         <div class="skill-detail-meta-item">
@@ -394,7 +421,7 @@ watch(skill, (val, old) => {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
               </svg>
-              <span class="repo-stat-count">{{ formattedStars }}</span>
+              <span class="repo-stat-count">{{ displayStars }}</span>
             </div>
             <!-- Forks -->
             <div class="repo-stat-badge">
@@ -473,20 +500,31 @@ watch(skill, (val, old) => {
             </div>
           </template>
           
-          <!-- 回退到原始 JSON 数据 -->
-          <template v-else>
+          <!-- 预览模式（API 未返回）：回退到卡片基础数据 -->
+          <template v-else-if="isPreviewMode">
             <div class="skill-detail-field">
-              <div class="skill-detail-field-label">name: <span class="skill-detail-field-value">{{ skill.name }}</span></div>
+              <div class="skill-detail-field-label">name: <span class="skill-detail-field-value">{{ displayName }}</span></div>
             </div>
-            
             <div class="skill-detail-field">
-              <div class="skill-detail-field-label">description: <span class="skill-detail-field-value">{{ skill.description }}</span></div>
+              <div class="skill-detail-field-label">description: <span class="skill-detail-field-value">{{ displayDescription }}</span></div>
             </div>
           </template>
 
           <div class="skill-detail-field">
-            <div class="skill-detail-field-content" v-if="isLoadingMd">{{ t('detail.skillmdLoading', '加载说明中...') }}</div>
-            <div class="skill-detail-field-content" v-else v-html="markdownContent"></div>
+            <!-- 骨架屏：API 还未返回时展示动画占位块 -->
+          <div v-if="isLoadingMd" class="skill-md-skeleton">
+            <div class="skeleton-line skeleton-line--title"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line skeleton-line--short"></div>
+            <div class="skeleton-spinner-wrap">
+              <svg class="skeleton-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke-opacity="0.2"/>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+              </svg>
+              <span class="skeleton-spinner-text">{{ t('detail.skillmdLoading', '加载说明中...') }}</span>
+            </div>
+          </div>
+          <div class="skill-detail-field-content" v-else v-html="markdownContent"></div>
           </div>
         </div>
       </div>
@@ -529,7 +567,7 @@ watch(skill, (val, old) => {
           </button>
 
           <!-- 安装命令区块 -->
-          <div v-if="skill.repo_full_name" class="skill-install-block">
+          <div v-if="skill?.repo_full_name" class="skill-install-block">
             <!-- 头部：终端标题栏 -->
             <div class="skill-install-header">
               <span class="skill-install-header-prompt">
@@ -1755,5 +1793,64 @@ watch(skill, (val, old) => {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+/* ── 骨架屏（Markdown 加载中）─────────────────────────────────── */
+.skill-md-skeleton {
+  padding: 8px 0 16px;
+}
+
+/* 灰色占位条，带波纹动画 */
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    var(--bg-secondary) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s infinite;
+  margin-bottom: 10px;
+  width: 100%;
+  opacity: 0.8;
+}
+
+.skeleton-line--title {
+  height: 16px;
+  width: 55%;
+  margin-bottom: 16px;
+}
+
+.skeleton-line--short {
+  width: 40%;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 转圈 + 文字提示 */
+.skeleton-spinner-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--muted);
+}
+
+.skeleton-spinner {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--muted);
+  animation: spin 0.9s linear infinite;
+}
+
+.skeleton-spinner-text {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
 }
 </style>

@@ -116,7 +116,7 @@ const cachedDefaultHandler = defineCachedEventHandler(
  * 例：/api/proxy/skills/some-skill-key → urlPath = /skills/some-skill-key
  */
 function getUrlPath(event: H3Event): string {
-  return ((event.path || '').replace(/^\/api\/proxy/, '') || '/').split('?')[0]
+  return ((event.path || '').replace(/^\/api\/proxy/, '') || '/').split('?')[0] || '/'
 }
 
 // ── 主入口 ─────────────────────────────────────────────────────────────────────

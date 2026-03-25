@@ -2,11 +2,13 @@
 import { computed, onMounted, watch } from 'vue'
 import { useI18n, loadModule } from '~/i18n'
 import { useCategoryStore } from '~/composables/useCategoryStore'
+import { useSkillPreview } from '~/composables/useSkillPreview'
 
 const i18n = useI18n()
 const t = i18n.t
 const router = useRouter()
 const localePath = useLocalePath()
+const { setPreview } = useSkillPreview()
 
 onMounted(async () => {
   await loadModule(i18n.locale.value, 'skillCard')
@@ -38,6 +40,15 @@ const props = defineProps({
 
 
 function handleCardClick() {
+  // 跳转前将卡片基础数据写入共享状态，详情页可立即渲染，无需等待 API
+  setPreview({
+    id: props.skill.id,
+    name: props.skill.name,
+    description: props.skill.description,
+    author: props.skill.author,
+    stars: props.skill.stars,
+    categoryId: props.skill.Classification,
+  })
   // 用 history state 传递 UUID，不显示在 URL 中
   router.push({
     path: localePath(`/skill/${props.skill.id}`),
