@@ -1,19 +1,11 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
-import { useI18n, loadModule } from '~/i18n'
+import { useI18n } from '~/i18n'
 
 // 接入 i18n
 const i18n = useI18n()
 const localePath = useLocalePath()
 const t = i18n.t
 
-onMounted(async () => {
-  await loadModule(i18n.locale, 'footer')
-})
-
-watch(i18n.locale, async (lang) => {
-  await loadModule(lang, 'footer')
-})
 
 </script>
 

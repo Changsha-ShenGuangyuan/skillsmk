@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { useI18n, loadModule } from '~/i18n'
+import { useI18n } from '~/i18n'
 import { fetchSkills, toSkillCardProps } from '~/composables/useSkillsApi'
 import type { ApiSkill } from '~/composables/useSkillsApi'
 
@@ -27,18 +27,7 @@ useHead({
   link: [{ rel: 'canonical', href: `${siteUrl}/search` }],
 })
 
-onMounted(async () => {
-  await Promise.all([
-    loadModule(i18n.locale, 'search'),
-    loadModule(i18n.locale, 'common'),
-  ])
-})
-watch(i18n.locale, async (lang) => {
-  await Promise.all([
-    loadModule(lang, 'search'),
-    loadModule(lang, 'common'),
-  ])
-})
+
 
 const route = useRoute()
 const router = useRouter()

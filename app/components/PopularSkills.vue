@@ -1,22 +1,17 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import SkillCard from './SkillCard.vue'
-import { useI18n, loadModule } from '~/i18n'
+import { useI18n } from '~/i18n'
 import { fetchSkillsTop, toSkillCardProps } from '~/composables/useSkillsApi'
 
 const i18n = useI18n()
 const t = i18n.t
 
-// i18n 模块懒加载（客户端）+ 数据兜底加载
+// 兜底：若 SSR payload 中热门技能数据为空，客户端主动重新获取
 onMounted(async () => {
-  await loadModule(i18n.locale.value, 'search')
-  // 兜底：若 SSR payload 中热门技能数据为空，客户端主动重新获取
   if (!topData.value || topData.value.code !== 0 || !topData.value.data?.length) {
     await refreshTop()
   }
-})
-watch(i18n.locale, async (lang) => {
-  await loadModule(lang, 'search')
 })
 
 // 热门技能：使用 useAsyncData 在服务端获取，支持 SWR 缓存

@@ -1,13 +1,15 @@
 /**
  * useZipTree
- * 封装 ZIP 目录预览的构建与交互逻辑
+ * 封装目录预览的构建与交互逻辑
  *
- * loadZipPreview 支持两种方式：
- *   - cdnUrl（优先）：直接从 R2 CDN 拉取 zip
- *   - localId（回退）：从本地 /downloads/{id}.zip 拉取（旧方式）
+ * loadZipPreview 通过服务端代理 /api/proxy/github-tree 获取文件树
+ * 文件内容读取通过 GitHub Raw URL 按需拉取
+ *
+ * 优化改动：
+ *   - 移除 JSZip 依赖（之前静态导入但实际未使用，约 90KB）
+ *   - 改为通过 Nitro 服务端代理调用 GitHub API（支持 Token + 1h 缓存）
  */
 import { ref, computed } from 'vue'
-import JSZip from 'jszip'
 
 export interface ZipNode {
   path: string
@@ -57,67 +59,62 @@ function buildZipTree(paths: string[]): ZipNode[] {
   return root
 }
 
+/** 模块级内存缓存：同一 repo + 路径在应用生命周期内只请求一次 */
+const _treeCache = new Map<string, { files: string[]; rawBase: string }>()
+
 export function useZipTree() {
   const zipFiles = ref<string[]>([])
   const zipRootNodes = ref<ZipNode[]>([])
-  const zipInstance = ref<JSZip | null>(null)
-  
-  // 记录 fallback 使用的 GitHub Raw Base URL
+
+  // 记录 GitHub Raw Base URL（由代理返回）
   const githubRawBase = ref<string | null>(null)
 
   /**
-   * 加载并预览 ZIP 目录结构
-   * @param githubUrl 当前技能的 GitHub URL（通过 API 获取目录结构用于展示）
+   * 加载并预览目录结构
+   * @param githubUrl 当前技能的 GitHub URL
    */
   async function loadZipPreview(githubUrl?: string) {
     zipFiles.value = []
     zipRootNodes.value = []
-    zipInstance.value = null
     githubRawBase.value = null
 
     if (!githubUrl) return
 
-    // 从 GitHub 接口拉取目录结构数据（无内容预览，仅看目录树）
     try {
+      // 从 GitHub URL 解析 owner/repo/branch/path
       const regex = /github\.com\/([^\/]+)\/([^\/]+)(?:\/tree\/([^\/]+)\/(.+))?/
       const match = githubUrl.match(regex)
       if (!match) return
 
       const owner = match[1]
       const repo = match[2]
-      let branch = match[3]
+      const branch = match[3] || 'auto'
       const path = match[4] || ''
 
-      if (!branch || branch === 'auto') {
-        try {
-          const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`)
-          if (repoRes.ok) {
-            const repoData = await repoRes.json()
-            branch = repoData.default_branch || 'main'
-          } else {
-            branch = 'main'
-          }
-        } catch {
-          branch = 'main'
-        }
+      // 内存缓存 key（同一 repo + 路径在本次会话内只请求一次）
+      const cacheKey = `${owner}/${repo}/${branch}/${path}`
+      const cached = _treeCache.get(cacheKey)
+      if (cached) {
+        zipFiles.value = cached.files
+        zipRootNodes.value = buildZipTree(cached.files)
+        githubRawBase.value = cached.rawBase
+        return
       }
 
-      // 保存 Raw Base，用于动态读取单个文件
-      const targetPrefix = path ? (path.endsWith('/') ? path : path + '/') : ''
-      githubRawBase.value = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${targetPrefix}`
+      // 通过服务端代理获取文件树（Nitro 1h 缓存 + 并行分支探测）
+      const result = await $fetch<{ files: string[]; defaultBranch: string; rawBase: string }>(
+        '/api/github-tree',
+        { query: { owner, repo, branch, path } }
+      )
 
-      const treeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`)
-      if (!treeRes.ok) return
-      const treeData = await treeRes.json()
+      // 写入内存缓存
+      _treeCache.set(cacheKey, { files: result.files, rawBase: result.rawBase })
 
-      const files: string[] = treeData.tree
-        .filter((item: any) => item.type === 'blob' && item.path.startsWith(targetPrefix))
-        .map((item: any) => targetPrefix ? item.path.substring(targetPrefix.length) : item.path)
-
-      zipFiles.value = files
-      zipRootNodes.value = buildZipTree(files)
+      zipFiles.value = result.files
+      zipRootNodes.value = buildZipTree(result.files)
+      githubRawBase.value = result.rawBase
     } catch (err) {
-      console.error('[useZipTree] GitHub Tree 拉取失败:', err)
+      console.error('[useZipTree] 文件树加载失败:', err)
     }
   }
 
@@ -141,22 +138,10 @@ export function useZipTree() {
     if (node.isDir) node.isOpen = !node.isOpen
   }
 
-  // 读取文件内容：优先从内存 zip 提取，如果没有 zip 实例但有 raw base，则按需通过网络拉取
+  // 读取文件内容：通过 GitHub Raw URL 按需拉取
   async function readZipFile(filePath: string): Promise<string | null> {
-    if (zipInstance.value) {
-      const file = zipInstance.value.file(filePath)
-      if (!file) return null
-      try {
-        return await file.async('text')
-      } catch {
-        return null
-      }
-    }
-    
-    // 如果没有本地 zip 实例，则尝试通过 GitHub Raw 动态读取
     if (githubRawBase.value) {
       try {
-        // githubRawBase 已经包含了 targetPrefix 目录，直接拼相对文件路径即可
         const res = await fetch(`${githubRawBase.value}${filePath}`)
         if (!res.ok) return null
         return await res.text()
@@ -165,7 +150,6 @@ export function useZipTree() {
         return null
       }
     }
-
     return null
   }
 

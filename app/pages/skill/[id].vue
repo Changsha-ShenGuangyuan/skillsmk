@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, watchEffect, onMounted } from 'vue'
-import { useI18n, loadModule } from '~/i18n'
+import { useI18n } from '~/i18n'
 import { useCategoryStore } from '~/composables/useCategoryStore'
 // Composables
 import { useSkillShare }    from '~/composables/useSkillShare'
@@ -20,19 +20,9 @@ const { public: { siteUrl } } = useRuntimeConfig()
 // ── 点击卡片传入的基础预览数据（可立即渲染，无需等待 API）──────────
 const { preview, clearPreview } = useSkillPreview()
 
-// i18n 模块加载（客户端）
-onMounted(async () => {
-  await Promise.all([
-    loadModule(i18n.locale.value, 'skillDetail'),
-    loadModule(i18n.locale.value, 'common'),
-  ])
-})
+// 语言切换时重新拉取分类翻译
 watch(i18n.locale, async (lang) => {
-  await Promise.all([
-    loadModule(lang, 'skillDetail'),
-    loadModule(lang, 'common'),
-  ])
-  await catStore.ensureLoaded(lang)  // 语言切换时重新拉取分类翻译
+  await catStore.ensureLoaded(lang)
 })
 
 // ── 路由 ──────────────────────────────────────────────────────
@@ -106,7 +96,7 @@ const { data: ssrData, status } = await useAsyncData(
       return null
     }
   },
-  { server: false, lazy: true, watch: [() => route.params.id] }  // server:false = payload 即时返回，页面立即渲染骨架
+  { watch: [() => route.params.id] }  // SSR 渲染：配合 routeRules SWR 缓存，首屏直接输出完整 HTML
 )
 
 // ── 从 ssrData 派生响应式数据（computed）─────────────────────
@@ -765,7 +755,7 @@ watch(skill, (val, old) => {
     </div>
   </div>
   <div v-else class="skill-detail-loading">
-      加载中...
+      {{ t('detail.loading', '加载中...') }}
   </div>
 
   <!-- Zip 文件内容预览弹窗 -->

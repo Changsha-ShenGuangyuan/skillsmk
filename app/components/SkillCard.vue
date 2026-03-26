@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
-import { useI18n, loadModule } from '~/i18n'
+import { computed } from 'vue'
+import { useI18n } from '~/i18n'
 import { useCategoryStore } from '~/composables/useCategoryStore'
 import { useSkillPreview } from '~/composables/useSkillPreview'
 
@@ -10,12 +10,7 @@ const router = useRouter()
 const localePath = useLocalePath()
 const { setPreview } = useSkillPreview()
 
-onMounted(async () => {
-  await loadModule(i18n.locale.value, 'skillCard')
-})
-watch(i18n.locale, async (lang) => {
-  await loadModule(lang, 'skillCard')
-})
+
 
 const catStore = useCategoryStore()
 

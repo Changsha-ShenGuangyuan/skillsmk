@@ -1,18 +1,11 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
-import { useI18n, loadModule } from '~/i18n'
+import { useI18n } from '~/i18n'
 
 const i18n = useI18n()
 const t    = i18n.t
 const { public: { siteUrl } } = useRuntimeConfig()
 
-// 加载 common 模块（含 SEO meta 翻译）
-onMounted(async () => {
-  await loadModule(i18n.locale, 'common')
-})
-watch(i18n.locale, async (lang) => {
-  await loadModule(lang, 'common')
-})
+
 
 // SEO：首页 meta 信息（跟随语言动态更新）
 useSeoMeta({
@@ -50,10 +43,10 @@ useHead({
     <SearchSection />
     <CategoryOverview />
     <!-- skills-top 已改为 useAsyncData 服务端渲染，移除 ClientOnly -->
-    <PopularSkills />
-    <StarChart />
-    <HowItWorks />
-    <FaqSection />
+    <!-- 下半部分组件懒加载：减少首屏 TTI -->
+    <LazyStarChart />
+    <LazyHowItWorks />
+    <LazyFaqSection />
   </div>
 </template>
 

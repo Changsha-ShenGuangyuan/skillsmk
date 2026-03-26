@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { fetchSkillsTop, getSkillDisplayName } from '~/composables/useSkillsApi'
 import type { ApiSkill } from '~/composables/useSkillsApi'
 import { useCategoryStore } from '~/composables/useCategoryStore'
-import { useI18n, loadModule } from '~/i18n'
+import { useI18n } from '~/i18n'
 
 const i18n = useI18n()
 const t = i18n.t
@@ -40,20 +40,9 @@ useHead({
   ],
 })
 
-// i18n 模块加载（客户端）
-onMounted(async () => {
-  await Promise.all([
-    loadModule(i18n.locale.value, 'leaderboard'),
-    loadModule(i18n.locale.value, 'common'),
-  ])
-})
-
+// 语言切换时重新拉取分类翻译
 watch(i18n.locale, async (lang) => {
-  await Promise.all([
-    loadModule(lang, 'leaderboard'),
-    loadModule(lang, 'common'),
-  ])
-  await catStore.ensureLoaded(lang)  // 语言切换时重新拉取分类翻译
+  await catStore.ensureLoaded(lang)
 })
 
 const router = useRouter()

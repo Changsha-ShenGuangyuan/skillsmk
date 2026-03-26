@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
 import { marked } from '~/composables/useMarkdownRenderer'
+import { useI18n } from '~/i18n'
+
+const i18n = useI18n()
+const t    = i18n.t
 
 const props = defineProps<{
   /** 文件名（用于顶部标题栏显示） */
@@ -113,7 +117,7 @@ function getFileType(name: string): { type: 'md' | 'code' | 'text', label: strin
               <svg class="zfv-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
               </svg>
-              加载中...
+              {{ t('detail.loading', '加载中...') }}
             </div>
             <!-- Markdown 渲染 -->
             <div

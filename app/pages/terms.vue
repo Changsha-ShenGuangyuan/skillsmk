@@ -1,23 +1,11 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
-import { useI18n, loadModule } from '~/i18n'
+import { useI18n } from '~/i18n'
 
 const i18n = useI18n()
 const t    = i18n.t
 const { public: { siteUrl } } = useRuntimeConfig()
 
-onMounted(async () => {
-  await Promise.all([
-    loadModule(i18n.locale, 'terms'),
-    loadModule(i18n.locale, 'common'),
-  ])
-})
-watch(i18n.locale, async (lang) => {
-  await Promise.all([
-    loadModule(lang, 'terms'),
-    loadModule(lang, 'common'),
-  ])
-})
+
 
 // SEO：服务条款页 meta（跟随语言动态更新）
 useSeoMeta({

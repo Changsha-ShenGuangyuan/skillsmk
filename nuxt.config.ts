@@ -37,6 +37,8 @@ export default defineNuxtConfig({
           type: 'image/svg+xml',
           href: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 28,8.5 28,23.5 16,30 4,23.5 4,8.5' fill='none' stroke='%232563eb' stroke-width='1.5'/%3E%3Cpolygon points='16,8 23,12 23,20 16,24 9,20 9,12' fill='rgba(37,99,235,0.12)' stroke='%232563eb' stroke-width='1'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%232563eb'/%3E%3C/svg%3E",
         },
+        // 预连接：减少首次请求 GitHub 资源的 DNS + TCP + TLS 延迟
+        { rel: 'preconnect', href: 'https://raw.githubusercontent.com' },
 
       ],
       script: [

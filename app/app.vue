@@ -6,8 +6,10 @@ import { useCategoryStore } from '~/composables/useCategoryStore'
 const i18n = provideI18n()
 const t    = i18n.t
 
-// 初始化全局分类 Store（确保页面加载时即触发第一次请求）
+// 初始化全局分类 Store 并在 SSR 阶段预取分类数据
+// 确保首屏 HTML 中分类标签即有内容，避免客户端二次请求+闪烁
 const catStore = useCategoryStore()
+await catStore.ensureLoaded(i18n.locale.value)
 
 /** i18n locale code → BCP-47 HTML lang 属性值映射 */
 const LOCALE_TO_LANG: Record<string, string> = {

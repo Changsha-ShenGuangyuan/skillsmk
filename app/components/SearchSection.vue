@@ -2,7 +2,7 @@
 import { ref, computed, onUnmounted, watch, nextTick } from 'vue'
 import SkillCard from './SkillCard.vue'
 import CategoryItem from './CategoryItem.vue'
-import { useI18n, loadModule } from '~/i18n'
+import { useI18n } from '~/i18n'
 import { fetchSkills, toSkillCardProps } from '~/composables/useSkillsApi'
 import type { ApiSkill } from '~/composables/useSkillsApi'
 import { useCategoryStore } from '~/composables/useCategoryStore'
@@ -11,12 +11,7 @@ const i18n = useI18n()
 const t = i18n.t
 const catStore = useCategoryStore()
 
-onMounted(async () => {
-  await loadModule(i18n.locale.value, 'search')
-})
-watch(i18n.locale, async (lang) => {
-  await loadModule(lang, 'search')
-})
+
 
 const query = ref('')
 const hintKey = ref<'default' | 'noInput' | 'searching'>('default')

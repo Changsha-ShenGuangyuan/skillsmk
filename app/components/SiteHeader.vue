@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { nextTick } from 'vue'
 import LangSwitcher from './LangSwitcher.vue'
 import ThemeToggle from './ThemeToggle.vue'
-import { useI18n, loadModule } from '~/i18n'
+import { useI18n } from '~/i18n'
 import { useTheme } from '~/composables/useTheme'
 
 const router = useRouter()
@@ -18,15 +18,7 @@ const t = i18n.t
 // 初始化主题（确保刷新后恢复正确主题）
 useTheme()
 
-// 加载 header 模块
-onMounted(async () => {
-  await loadModule(i18n.locale, 'header')
-})
 
-// 语言切换时重新加载
-watch(i18n.locale, async (lang) => {
-  await loadModule(lang, 'header')
-})
 
 // 监听滚动，控制 header 透明度
 function handleScroll() {
