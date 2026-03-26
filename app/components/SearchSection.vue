@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onUnmounted, watch } from 'vue'
+import { ref, computed, onUnmounted, watch, nextTick } from 'vue'
 import SkillCard from './SkillCard.vue'
 import CategoryItem from './CategoryItem.vue'
 import { useI18n, loadModule } from '~/i18n'
@@ -51,24 +51,22 @@ function goToSearch() {
   router.push(localePath('/search'))
 }
 
-// ── 客户端初始数据获取（server: false，让服务端立即发骨架 HTML）──
-// 不在服务端等待 API，客户端水合后立即显示骨架，数据返回后切换
+// ── SSR 初始数据（服务端执行，嵌入 HTML Payload）──
 const { data: _initData, status: _initStatus } = await useAsyncData('search-section-skills', () =>
-  fetchSkills({ page: 1, per_page: 9 }),
-  { server: false, lazy: true }
+  fetchSkills({ page: 1, per_page: 9 })
 )
 const _init = _initData.value?.code === 0 ? _initData.value : null
 
-// ── API 数据状态（初始为空，客户端获取数据后填充）──
+
+// ── API 数据状态（从 SSR 数据初始化）──
 const apiSkills   = ref<ApiSkill[]>(_init?.data ?? [])
 const totalSkills = ref(_init?.meta?.total ?? 0)
-// isLoading：idle/pending 时显示骨架，success/error 时显示内容
-// 注意：搜索/筛选触发 loadSkills() 时由 loadSkills 内部的 isLoading ref 接管
-const _initLoading = computed(() => _initStatus.value === 'idle' || _initStatus.value === 'pending')
-const _manualLoading = ref(false)
+// 骨架条件：无数据 OR 状态加载中
+const _initLoading = computed(() => !_initData.value || _initStatus.value === 'idle' || _initStatus.value === 'pending')
+const _manualLoading = ref(false)  // 搜索/筛选时手动控制骨架
 const isLoading = computed(() => _initLoading.value || _manualLoading.value)
 
-// 客户端首次获取完成后同步数据
+// SPA 导航回返时同步初始数据
 watch(_initData, (val) => {
   if (val?.code === 0) {
     apiSkills.value   = val.data
@@ -82,7 +80,7 @@ let currentAbort: AbortController | null = null
 async function loadSkills() {
   currentAbort?.abort()
   currentAbort = new AbortController()
-  _manualLoading.value = true  // 触发搜索/筛选时开启骨架
+  _manualLoading.value = true
   try {
     const res = await fetchSkills({
       page: 1,
@@ -94,7 +92,7 @@ async function loadSkills() {
       apiSkills.value = res.data
     }
   } finally {
-    _manualLoading.value = false  // 无论成功失败，关闭骨架
+    _manualLoading.value = false
   }
 }
 
@@ -110,6 +108,16 @@ watch([query, activeCategory], () => {
 
 // 展示给模板的卡片列表
 const displaySkills = computed(() => apiSkills.value.map(toSkillCardProps))
+
+// 数据到达时保存并还原滚动位置，防止 DOM 替换导致滚动跳顶
+if (import.meta.client) {
+  watch(isLoading, (newVal, oldVal) => {
+    if (oldVal === true && newVal === false) {
+      const savedY = window.scrollY
+      nextTick(() => window.scrollTo({ top: savedY, behavior: 'instant' as ScrollBehavior }))
+    }
+  })
+}
 </script>
 
 <template>

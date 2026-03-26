@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch, nextTick } from 'vue'
 import { useI18n, loadModule } from '~/i18n'
 import { useCategoryStore } from '~/composables/useCategoryStore'
 import { fetchSkills } from '~/composables/useSkillsApi'
@@ -10,15 +10,18 @@ const i18n    = useI18n()
 const { t }   = i18n
 const catStore = useCategoryStore()
 
-// 分类加载状态：初始为 true，确保首次访问立即显示骨架屏
-const isLoadingCats = ref(true)
+// 分类加载状态：SSR 已提供数据，逳这为 false︎
+// 只有刦底场景（SSR 失败/缓存过期）才为 true
+const isLoadingCats = ref(catStore.categories.value.length === 0)
 
-// i18n 模块加载（客户端）+ 分类数据主动加载
+// i18n 模块加载（客户端）+ 分类兆底加载
 onMounted(async () => {
   await loadModule(i18n.locale.value, 'categories')
-  // 主动加载分类（不依赖 length 判断，确保数据最新）
-  await catStore.ensureLoaded(i18n.locale.value)
-  isLoadingCats.value = false  // 数据就绪，切换为真实内容
+  if (catStore.categories.value.length === 0) {
+    // SSR 没有数据时客户端兆底加载
+    await catStore.ensureLoaded(i18n.locale.value)
+    isLoadingCats.value = false
+  }
 })
 watch(i18n.locale, async (lang) => {
   await loadModule(lang, 'categories')
@@ -80,6 +83,16 @@ function goToCategory(id: number) {
 }
 function goToAll() {
   router.push(localePath('/categories'))
+}
+
+// 分类数据到达时保存并还原滚动位置，防止骨架→分类切换导致滚动跳顶
+if (import.meta.client) {
+  watch(isLoadingCats, (newVal, oldVal) => {
+    if (oldVal === true && newVal === false) {
+      const savedY = window.scrollY
+      nextTick(() => window.scrollTo({ top: savedY, behavior: 'instant' as ScrollBehavior }))
+    }
+  })
 }
 </script>
 
@@ -292,6 +305,7 @@ function goToAll() {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
+  min-height: 320px; /* 骨架→分类切换时保持高度稳定，防止滚动跳顶 */
 }
 
 /* ── 单个文件夹 ── */

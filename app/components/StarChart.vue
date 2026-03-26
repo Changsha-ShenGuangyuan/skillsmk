@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n, loadModule } from '~/i18n'
 import { fetchSkillsTop } from '~/composables/useSkillsApi'
 import { useCategoryStore } from '~/composables/useCategoryStore'
@@ -27,17 +27,16 @@ watch(i18n.locale, async (lang) => {
 const router     = useRouter()
 const localePath = useLocalePath()
 
-// 热门 Top10：改为客户端获取（server: false），服务端立即发骨架 HTML
-const { data: top10Data, status: top10Status, refresh: refreshTop10 } = await useAsyncData('star-chart-top10', () =>
-  fetchSkillsTop({ per_page: 10 }),
-  { server: false, lazy: true }
+// 热门 Top10：useAsyncData 服务端获取，嵌入 HTML Payload
+const { data: top10Data, refresh: refreshTop10 } = await useAsyncData('star-chart-top10', () =>
+  fetchSkillsTop({ per_page: 10 })
 )
 const top10 = computed(() =>
   top10Data.value?.code === 0 ? top10Data.value.data : []
 )
 
-// status 为 'idle' 或 'pending' 时显示骨架（idle=客户端尚未开始请求，pending=请求中）
-const isLoadingChart = computed(() => top10Status.value === 'idle' || top10Status.value === 'pending')
+// SSR 已有数据，骨架只在客户端兢底载失败时展现
+const isLoadingChart = computed(() => top10.value.length === 0)
 
 // 从 Store 读取分类名称和颜色
 const getCatName  = (categoryId: number) => catStore.getCategoryName(categoryId, i18n.locale.value)
@@ -89,6 +88,15 @@ function triggerAll() {
 // 点击跳转
 const handleClick = (id: string) => router.push(localePath(`/skill/${id}`))
 
+// 数据到达时保存并还原滚动位置，防止骨架→内容切换导致滚动跳顶
+if (import.meta.client) {
+  watch(isLoadingChart, (newVal, oldVal) => {
+    if (oldVal === true && newVal === false) {
+      const savedY = window.scrollY
+      nextTick(() => window.scrollTo({ top: savedY, behavior: 'instant' as ScrollBehavior }))
+    }
+  })
+}
 </script>
 
 <template>
@@ -349,6 +357,7 @@ const handleClick = (id: string) => router.push(localePath(`/skill/${id}`))
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 480px; /* 骨架→内容切换时保持高度稳定，防止滚动跳顶 */
 }
 
 /* ── 每一行 ── */

@@ -92,7 +92,7 @@ async function parseMarkdown(mdText: string): Promise<ParsedMd> {
   }
 }
 
-// ── SSR 数据获取（useAsyncData，服务端 + 客户端均执行）───────────
+// ── 数据获取（lazy: true，页面立即渲染，不阻塞等待 API）────────────
 const { data: ssrData, status } = await useAsyncData(
   () => `skill-${route.params.id}`,
   async () => {
@@ -106,7 +106,7 @@ const { data: ssrData, status } = await useAsyncData(
       return null
     }
   },
-  { watch: [() => route.params.id] }  // 路由变化时自动重新获取
+  { server: false, lazy: true, watch: [() => route.params.id] }  // server:false = payload 即时返回，页面立即渲染骨架
 )
 
 // ── 从 ssrData 派生响应式数据（computed）─────────────────────
@@ -117,7 +117,7 @@ const markdownContent = computed<string>(() => {
   if (status.value === 'pending') return ''
   return ssrData.value?.markdownContent ?? '<p>技能不存在或已下架。</p>'
 })
-const isLoadingMd = computed<boolean>(() => status.value === 'pending')
+const isLoadingMd = computed<boolean>(() => status.value === 'pending' || status.value === 'idle')
 
 // API 加载完成后，清空预览缓存（避免切换到其他详情页时显示旧数据）
 watch(skill, (val) => {
