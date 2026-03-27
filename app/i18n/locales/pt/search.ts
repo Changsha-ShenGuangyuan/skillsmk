@@ -32,6 +32,13 @@ const search = {
   'search.emptyTitle':   'Nenhum skill correspondente encontrado',
   'search.emptyDesc':    'Tente outras palavras-chave ou remova o filtro de categoria',
   'search.viewAll': 'Ver todos',
+  // 错误提示
+  'search.error429':     'Muitas requisições, aguarde um momento e tente novamente',
+  'search.error5xx':     'Erro no servidor, tente novamente mais tarde',
+  'search.errorNetwork': 'Falha ao carregar, verifique sua conexão de rede',
+  'search.errorRetry':   'Recarregar',
+  'search.emptyMatchPre':  'Nenhum skill encontrado para "',
+  'search.emptyMatchPost': '"',
 } as const
 
 export default search

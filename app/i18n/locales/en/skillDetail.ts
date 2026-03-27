@@ -48,6 +48,10 @@ const skillDetail = {
   'detail.stepConfigZipDesc':'Follow the instructions in SKILL.md to configure and enable this skill in your MCP-compatible app.',
   'detail.metaBy':    ' by ',
   'detail.metaStars': ' stars',
+  'detail.loadError':     'Failed to Load',
+  'detail.loadErrorDesc': 'This skill may not exist or has been removed. Please check your network and try again.',
+  'detail.retry':         'Retry',
+  'detail.goBack':        'Go Back',
 } as const
 
 export default skillDetail

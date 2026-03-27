@@ -48,6 +48,10 @@ const skillDetail = {
   'detail.stepConfigZipDesc':'Suivez les instructions de SKILL.md pour configurer et activer ce skill dans votre application.',
   'detail.metaBy':    ' par ',
   'detail.metaStars': ' étoiles',
+  'detail.loadError':     'Échec du chargement',
+  'detail.loadErrorDesc': 'Ce skill n\'existe peut-être pas ou a été supprimé. Vérifiez votre réseau et réessayez.',
+  'detail.retry':         'Recharger',
+  'detail.goBack':        'Retour',
 } as const
 
 export default skillDetail

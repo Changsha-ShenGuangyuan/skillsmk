@@ -32,6 +32,13 @@ const search = {
   'search.emptyTitle':   '一致するスキルが見つかりません',
   'search.emptyDesc':    '別のキーワードを試すか、カテゴリフィルターを解除してください',
   'search.viewAll': 'すべて見る',
+  // 错误提示
+  'search.error429':     'リクエストが多すぎます。しばらくしてから再試行してください',
+  'search.error5xx':     'サーバーエラーが発生しました。後ほど再試行してください',
+  'search.errorNetwork': '読み込みに失敗しました。ネットワーク接続を確認してください',
+  'search.errorRetry':   '再読み込み',
+  'search.emptyMatchPre':  '"',
+  'search.emptyMatchPost': '" に一致するスキルが見つかりません',
 } as const
 
 export default search

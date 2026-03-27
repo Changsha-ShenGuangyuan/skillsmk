@@ -53,6 +53,7 @@ const apiSkills  = ref<ApiSkill[]>(_init?.data ?? [])
 const totalItems = ref(_init?.meta?.total ?? 0)
 const totalPages = ref(_init?.meta?.last_page ?? 1)
 const isLoading  = ref(false)
+const fetchError = ref<string | null>(null)  // API 错误信息，null 表示无错误
 
 // SPA 导航回返时同步初始数据
 watch(_initData, (val) => {
@@ -73,6 +74,7 @@ async function loadSkills() {
   const signal = currentAbort.signal
 
   isLoading.value = true
+  fetchError.value = null  // 每次新请求前清空错误
   try {
     const res = await fetchSkills({
       page: currentPage.value,
@@ -87,6 +89,15 @@ async function loadSkills() {
   } catch (e: any) {
     if (e?.name !== 'AbortError' && !e?.message?.includes('aborted')) {
       console.error('[search] loadSkills 失败', e)
+      // 区分限流和普通网络错误，给出针对性提示
+      const status = e?.response?.status ?? e?.status
+      if (status === 429) {
+        fetchError.value = t('search.error429', '请求过于频繁，请稍等片刻后重试')
+      } else if (status >= 500) {
+        fetchError.value = t('search.error5xx', '服务器暂时出现错误，请稍后重试')
+      } else {
+        fetchError.value = t('search.errorNetwork', '加载失败，请检查网络连接后重试')
+      }
     }
   } finally {
     if (currentAbort?.signal === signal) {
@@ -186,6 +197,19 @@ const goToNextPage = () => { if (currentPage.value < totalPages.value) currentPa
           </div>
         </template>
 
+        <!-- 错误提示 -->
+        <div v-else-if="fetchError" class="fetch-error">
+          <div class="fetch-error-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <p class="fetch-error-text">{{ fetchError }}</p>
+          <button class="fetch-error-retry" @click="loadSkills">{{ t('search.errorRetry', '重新加载') }}</button>
+        </div>
+
         <!-- 数据列表 -->
         <template v-else-if="paginatedSkills.length > 0">
           <div class="skills-grid">
@@ -205,7 +229,7 @@ const goToNextPage = () => { if (currentPage.value < totalPages.value) currentPa
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </div>
-          <p class="empty-text">未找到匹配 "<span class="empty-query">{{ searchQuery }}</span>" 的 Skill</p>
+          <p class="empty-text">{{ t('search.emptyMatchPre', '未找到匹配 "') }}<span class="empty-query">{{ searchQuery }}</span>{{ t('search.emptyMatchPost', '" 的 Skill') }}</p>
           <p class="empty-hint">{{ t('search.noResultHint', '换个关键字试试，或清空搜索框浏览全部') }}</p>
         </div>
       </div>
@@ -461,6 +485,53 @@ const goToNextPage = () => { if (currentPage.value < totalPages.value) currentPa
   color: var(--muted);
   margin: 0;
   font-family: var(--font-mono);
+}
+
+/* 错误提示 */
+.fetch-error {
+  text-align: center;
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.04);
+  margin-bottom: 48px;
+}
+
+.fetch-error-icon {
+  color: #ef4444;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.fetch-error-text {
+  font-size: 15px;
+  color: var(--fg-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+.fetch-error-retry {
+  margin-top: 4px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--fg-secondary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fetch-error-retry:hover {
+  border-color: var(--border-strong);
+  color: var(--fg);
+  background: var(--bg-card);
 }
 
 /* 分页 */

@@ -59,8 +59,34 @@ function buildZipTree(paths: string[]): ZipNode[] {
   return root
 }
 
-/** 模块级内存缓存：同一 repo + 路径在应用生命周期内只请求一次 */
+/**
+ * 模块级内存缓存：同一 repo + 路径在应用生命周期内只请求一次
+ *
+ * ⚠️ 注意：仅在客户端使用。模块级变量在 Nitro SSR 中跨请求共享，
+ * 必须通过 import.meta.client 守卫确保服务端绝对不会读写此 Map，
+ * 防止 Cross-Request State Pollution 及服务端内存泄漏。
+ *
+ * 最多缓存 MAX_TREE_CACHE 条，超出时删除最旧的条目。
+ */
 const _treeCache = new Map<string, { files: string[]; rawBase: string }>()
+const MAX_TREE_CACHE = 50 // 内存中最多保留 50 条文件树
+
+/** 安全写入缓存（仅客户端，带驱逐） */
+function putTreeCache(key: string, value: { files: string[]; rawBase: string }) {
+  if (!import.meta.client) return
+  if (_treeCache.size >= MAX_TREE_CACHE) {
+    // Map 保留插入顺序，删除最旧的第一条
+    const oldest = _treeCache.keys().next().value
+    if (oldest) _treeCache.delete(oldest)
+  }
+  _treeCache.set(key, value)
+}
+
+/** 安全读取缓存（仅客户端） */
+function getTreeCache(key: string) {
+  if (!import.meta.client) return undefined
+  return _treeCache.get(key)
+}
 
 export function useZipTree() {
   const zipFiles = ref<string[]>([])
@@ -93,7 +119,7 @@ export function useZipTree() {
 
       // 内存缓存 key（同一 repo + 路径在本次会话内只请求一次）
       const cacheKey = `${owner}/${repo}/${branch}/${path}`
-      const cached = _treeCache.get(cacheKey)
+      const cached = getTreeCache(cacheKey)  // 仅客户端有效
       if (cached) {
         zipFiles.value = cached.files
         zipRootNodes.value = buildZipTree(cached.files)
@@ -107,8 +133,8 @@ export function useZipTree() {
         { query: { owner, repo, branch, path } }
       )
 
-      // 写入内存缓存
-      _treeCache.set(cacheKey, { files: result.files, rawBase: result.rawBase })
+      // 写入内存缓存（带客户端守卫 + 条目数限制）
+      putTreeCache(cacheKey, { files: result.files, rawBase: result.rawBase })
 
       zipFiles.value = result.files
       zipRootNodes.value = buildZipTree(result.files)

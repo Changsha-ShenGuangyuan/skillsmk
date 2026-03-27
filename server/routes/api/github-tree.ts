@@ -6,6 +6,7 @@
  * 性能优化：
  *   - 并行尝试 main + master 两个分支，取先成功的（省去一次串行 RTT）
  *   - Nitro 缓存 1 小时，同一仓库重复访问直接命中缓存
+ *   - 负值缓存（Negative Cache）：失败路径 60 秒内不再透传到 GitHub，防止限流雪崩
  *
  * 请求参数（Query）：
  *   owner  — 仓库拥有者
@@ -17,6 +18,32 @@
  *   { files: string[], defaultBranch: string, rawBase: string }
  */
 import type { H3Event } from 'h3'
+
+/**
+ * 负值缓存（Negative Cache）
+ * 对 GitHub API 返回 404 / 403 / 429 / 5xx 等失败的仓库路径，
+ * 在服务端内存中记录 60 秒，期间相同请求直接返回错误，不再透传 GitHub。
+ *
+ * 结构：key -> 过期时间戳（ms）
+ */
+const negativeCache = new Map<string, number>()
+const NEGATIVE_TTL_MS = 60_000 // 60 秒
+
+/** 检查某个 key 是否命中负值缓存（若已过期则自动删除） */
+function isNegativeCached(key: string): boolean {
+  const exp = negativeCache.get(key)
+  if (exp === undefined) return false
+  if (Date.now() > exp) {
+    negativeCache.delete(key)
+    return false
+  }
+  return true
+}
+
+/** 写入负值缓存 */
+function setNegativeCache(key: string): void {
+  negativeCache.set(key, Date.now() + NEGATIVE_TTL_MS)
+}
 
 function getGitHubHeaders(): Record<string, string> {
   const token = process.env.NUXT_GITHUB_TOKEN
@@ -56,6 +83,15 @@ async function fetchGitHubTree(event: H3Event) {
     throw createError({ statusCode: 400, statusMessage: '缺少 owner 或 repo 参数' })
   }
 
+  // ── 负值缓存检查：如果此仓库路径在 60 秒内已失败，直接拦截 ──
+  const negKey = `${owner}/${repo}/${branch || 'auto'}/${subPath || ''}`
+  if (isNegativeCached(negKey)) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: '仓库文件树暂时不可用（已缓存错误 60 秒），请稍后重试',
+    })
+  }
+
   const ghHeaders = getGitHubHeaders()
   let treeData: { tree: Array<{ path: string; type: string }> } | null = null
   let resolvedBranch = branch
@@ -64,6 +100,7 @@ async function fetchGitHubTree(event: H3Event) {
     // 分支已知：直接请求
     treeData = await tryFetchTree(owner, repo, branch, ghHeaders)
     if (!treeData) {
+      setNegativeCache(negKey)
       throw createError({ statusCode: 404, statusMessage: `找不到分支 ${branch} 的文件树` })
     }
   } else {
@@ -96,6 +133,8 @@ async function fetchGitHubTree(event: H3Event) {
     }
 
     if (!treeData) {
+      // 写入负值缓存，60 秒内不再透传 GitHub
+      setNegativeCache(negKey)
       throw createError({ statusCode: 404, statusMessage: '无法获取仓库文件树，请检查仓库是否公开' })
     }
   }

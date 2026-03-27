@@ -32,6 +32,13 @@ const search = {
   'search.emptyTitle':   'Keine passenden Skills gefunden',
   'search.emptyDesc':    'Andere Stichwörter versuchen oder Kategoriefilter entfernen',
   'search.viewAll': 'Alle anzeigen',
+  // 错误提示
+  'search.error429':     'Zu viele Anfragen, bitte warte einen Moment und versuche es erneut',
+  'search.error5xx':     'Serverfehler, bitte versuche es später erneut',
+  'search.errorNetwork': 'Laden fehlgeschlagen, bitte überprüfe deine Netzwerkverbindung',
+  'search.errorRetry':   'Neu laden',
+  'search.emptyMatchPre':  'Keine Skills für "',
+  'search.emptyMatchPost': '" gefunden',
 } as const
 
 export default search

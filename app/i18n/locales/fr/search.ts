@@ -32,6 +32,13 @@ const search = {
   'search.emptyTitle':   'Aucun skill correspondant trouvé',
   'search.emptyDesc':    'Essayez d\'autres mots-clés ou retirez le filtre de catégorie',
   'search.viewAll': 'Voir tout',
+  // 错误提示
+  'search.error429':     'Trop de requêtes, veuillez patienter un moment avant de réessayer',
+  'search.error5xx':     'Erreur serveur, veuillez réessayer plus tard',
+  'search.errorNetwork': 'Échec du chargement, vérifiez votre connexion réseau',
+  'search.errorRetry':   'Recharger',
+  'search.emptyMatchPre':  'Aucun skill trouvé pour "',
+  'search.emptyMatchPost': '"',
 } as const
 
 export default search

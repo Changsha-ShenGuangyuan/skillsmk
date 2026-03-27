@@ -48,6 +48,10 @@ const skillDetail = {
   'detail.stepConfigZipDesc':'SKILL.md의 안내에 따라 이 스킬을 앱에서 설정하고 활성화하세요.',
   'detail.metaBy':    ' 작성자: ',
   'detail.metaStars': ' 스타',
+  'detail.loadError':     '로딩 실패',
+  'detail.loadErrorDesc': '이 스킬은 존재하지 않거나 삭제되었을 수 있습니다. 네트워크를 확인하고 다시 시도하세요.',
+  'detail.retry':         '다시 로드',
+  'detail.goBack':        '이전 페이지로',
 } as const
 
 export default skillDetail

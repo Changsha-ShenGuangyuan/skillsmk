@@ -32,6 +32,13 @@ const search = {
   'search.emptyTitle':   'لم يتم العثور على مهارات مطابقة',
   'search.emptyDesc':    'جرّب كلمات مفتاحية أخرى أو أزل فلتر الفئة المحدد',
   'search.viewAll': 'عرض الكل',
+  // 错误提示
+  'search.error429':     'طلبات كثيرة جداً، يرجى الانتظار قليلاً والمحاولة مرة أخرى',
+  'search.error5xx':     'خطأ في الخادم، يرجى المحاولة لاحقاً',
+  'search.errorNetwork': 'فشل التحميل، يرجى التحقق من اتصالك بالشبكة',
+  'search.errorRetry':   'إعادة التحميل',
+  'search.emptyMatchPre':  'لم يتم العثور على مهارات لـ "',
+  'search.emptyMatchPost': '"',
 } as const
 
 export default search

@@ -36,6 +36,14 @@ const search = {
   'search.emptyTitle':   'No matching skills found',
   'search.emptyDesc':    'Try different keywords, or clear the category filter',
   'search.viewAll': 'View All',
+  // 错误提示
+  'search.error429':     'Too many requests, please wait a moment and try again',
+  'search.error5xx':     'Server error, please try again later',
+  'search.errorNetwork': 'Failed to load, please check your network connection',
+  'search.errorRetry':   'Reload',
+  // 空状态匹配提示（分前后两段以包裹关键词的样式 span）
+  'search.emptyMatchPre':  'No skills found for "',
+  'search.emptyMatchPost': '"',
 } as const
 
 export default search

@@ -32,6 +32,13 @@ const search = {
   'search.emptyTitle':   'No se encontraron skills coincidentes',
   'search.emptyDesc':    'Prueba otras palabras clave o elimina el filtro de categoría',
   'search.viewAll': 'Ver todo',
+  // 错误提示
+  'search.error429':     'Demasiadas solicitudes, espera un momento e inténtalo de nuevo',
+  'search.error5xx':     'Error del servidor, inténtalo más tarde',
+  'search.errorNetwork': 'Error al cargar, verifica tu conexión de red',
+  'search.errorRetry':   'Recargar',
+  'search.emptyMatchPre':  'No se encontraron skills para "',
+  'search.emptyMatchPost': '"',
 } as const
 
 export default search

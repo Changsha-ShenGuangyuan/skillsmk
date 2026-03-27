@@ -48,6 +48,10 @@ const skillDetail = {
   'detail.stepConfigZipDesc':'SKILL.mdの説明に従ってこのスキルを設定して有効化してください。',
   'detail.metaBy':    ' 作者: ',
   'detail.metaStars': ' スター',
+  'detail.loadError':     '読み込みに失敗しました',
+  'detail.loadErrorDesc': 'このスキルは存在しないか削除された可能性があります。ネットワークを確認して再試行してください。',
+  'detail.retry':         '再読み込み',
+  'detail.goBack':        '前のページに戻る',
 } as const
 
 export default skillDetail

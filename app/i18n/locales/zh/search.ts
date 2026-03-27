@@ -36,6 +36,14 @@ const search = {
   'search.emptyTitle':   '未找到匹配的技能',
   'search.emptyDesc':    '试试其他关键词，或取消已选分类过滤',
   'search.viewAll': '查看全部',
+  // 错误提示
+  'search.error429':     '请求过于频繁，请稍等片刻后重试',
+  'search.error5xx':     '服务器暂时出现错误，请稍后重试',
+  'search.errorNetwork': '加载失败，请检查网络连接后重试',
+  'search.errorRetry':   '重新加载',
+  // 空状态匹配提示
+  'search.emptyMatchPre':  '未找到匹配 “',
+  'search.emptyMatchPost': '” 的 Skill',
 } as const
 
 export default search

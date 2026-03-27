@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, watchEffect, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from '~/i18n'
 import { useCategoryStore } from '~/composables/useCategoryStore'
 // Composables
@@ -83,17 +83,17 @@ async function parseMarkdown(mdText: string): Promise<ParsedMd> {
 }
 
 // ── 数据获取（lazy: true，页面立即渲染，不阻塞等待 API）────────────
-const { data: ssrData, status } = await useAsyncData(
+const { data: ssrData, status, refresh: _refreshSsrData } = await useAsyncData(
   () => `skill-${route.params.id}`,
   async () => {
     try {
       const res = await fetchSkillDetailAuto(route.params.id as string)
-      if (res.code !== 0 || !res.data) return null
+      if (res.code !== 0 || !res.data) return { error: true, detail: null, metadata: {}, markdownContent: '', rawMarkdown: '' }
       const parsed = await parseMarkdown(res.data.skill_md_content || '')
-      return { detail: res.data, ...parsed }
-    } catch (e) {
+      return { error: false, detail: res.data, ...parsed }
+    } catch (e: any) {
       console.warn('[SkillDetail] useAsyncData 获取失败', e)
-      return null
+      return { error: true, detail: null, metadata: {}, markdownContent: '', rawMarkdown: '' }
     }
   },
   { watch: [() => route.params.id] }  // SSR 渲染：配合 routeRules SWR 缓存，首屏直接输出完整 HTML
@@ -108,6 +108,14 @@ const markdownContent = computed<string>(() => {
   return ssrData.value?.markdownContent ?? '<p>技能不存在或已下架。</p>'
 })
 const isLoadingMd = computed<boolean>(() => status.value === 'pending' || status.value === 'idle')
+// 实际 API 失败（请求完成但返回了 error: true）
+const fetchError  = computed<boolean>(() => !isLoadingMd.value && !!ssrData.value?.error && !skill.value)
+
+// 重试加载详情数据
+function retryLoad() {
+  _refreshSsrData()
+}
+
 
 // API 加载完成后，清空预览缓存（避免切换到其他详情页时显示旧数据）
 watch(skill, (val) => {
@@ -301,14 +309,14 @@ useHead(() => {
   }
 })
 
-// JSON-LD Schema — 使用 watchEffect，仅在 skill 有效时注入
-// 避免 computed 在卸载时因 skill 变 null 触发 watcher callback 崩溃
-const schemaScript = ref<string>('')
-watchEffect(() => {
-  if (!skill.value) { schemaScript.value = ''; return }
+// JSON-LD Schema — 使用 useHead computed 直接计算，避免 watchEffect 中间 ref 竞争
+// skill 为 null 时返回空 script 数组，不注入任何内容
+useHead(computed(() => {
   const s = skill.value
+  if (!s) return { script: [] }
+  let innerHTML = ''
   try {
-    schemaScript.value = JSON.stringify({
+    innerHTML = JSON.stringify({
       '@context': 'https://schema.org',
       '@graph': [
         {
@@ -335,13 +343,11 @@ watchEffect(() => {
         },
       ],
     })
-  } catch (_e) { schemaScript.value = '' }
-})
-useHead(computed(() => ({
-  script: schemaScript.value
-    ? [{ type: 'application/ld+json', key: 'skill-schema', innerHTML: schemaScript.value }]
-    : [],
-})))
+  } catch (_e) { /* JSON 序列化异常时不注入 Schema */ }
+  return innerHTML
+    ? { script: [{ type: 'application/ld+json', key: 'skill-schema', innerHTML }] }
+    : { script: [] }
+}))
 
 
 // ── ZIP 预览（纯客户端，SSR 数据就绪后触发）──────────────────
@@ -754,8 +760,29 @@ watch(skill, (val, old) => {
 
     </div>
   </div>
+  <!-- 加载失败提示 -->
+  <div v-else-if="fetchError" class="skill-detail-error">
+    <div class="skill-error-icon">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <p class="skill-error-title">{{ t('detail.loadError', '详情加载失败') }}</p>
+    <p class="skill-error-desc">{{ t('detail.loadErrorDesc', '该技能可能不存在或已下架，请检查网络并重试。') }}</p>
+    <div class="skill-error-actions">
+      <button class="skill-error-retry" @click="retryLoad">{{ t('detail.retry', '重新加载') }}</button>
+      <button class="skill-error-back" @click="router.back()">{{ t('detail.goBack', '返回上一页') }}</button>
+    </div>
+  </div>
+  <!-- 加载中（status 为 pending 且无预览数据） -->
   <div v-else class="skill-detail-loading">
-      {{ t('detail.loading', '加载中...') }}
+    <svg class="detail-loading-spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10" stroke-opacity="0.2"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+    </svg>
+    {{ t('detail.loading', '加载中...') }}
   </div>
 
   <!-- Zip 文件内容预览弹窗 -->
@@ -832,6 +859,76 @@ watch(skill, (val, old) => {
   margin-bottom: 0;
 }
 
+/* ── 加载失败错误提示 ── */
+.skill-detail-error {
+  background: var(--bg-card);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 16px;
+  padding: 60px 40px;
+  text-align: center;
+  max-width: 1200px;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.skill-error-icon {
+  color: #ef4444;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.skill-error-title {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fg);
+  margin: 0;
+}
+
+.skill-error-desc {
+  font-size: 14px;
+  color: var(--fg-secondary);
+  margin: 0;
+}
+
+.skill-error-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.skill-error-retry,
+.skill-error-back {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skill-error-retry {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.skill-error-retry:hover { opacity: 0.85; }
+
+.skill-error-back {
+  background: var(--bg-elevated);
+  color: var(--fg-secondary);
+}
+.skill-error-back:hover {
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+
+/* ── 加载中状态 ── */
 .skill-detail-loading {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -842,6 +939,18 @@ watch(skill, (val, old) => {
   font-family: var(--font-mono);
   max-width: 1200px;
   margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.detail-loading-spinner {
+  animation: spin 1s linear infinite;
+  color: var(--muted);
 }
 
 .skill-detail-title {
@@ -1843,4 +1952,100 @@ watch(skill, (val, old) => {
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
 }
+
+/* ── 详情页加载中 ── */
+.skill-detail-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 240px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.detail-loading-spinner {
+  color: var(--muted);
+  animation: spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── 详情页加载失败 ── */
+.skill-detail-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 280px;
+  padding: 48px 24px;
+  text-align: center;
+  max-width: 1200px;
+  margin: 32px auto;
+  background: rgba(239, 68, 68, 0.03);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: var(--radius-lg);
+}
+
+.skill-error-icon {
+  color: #ef4444;
+  opacity: 0.65;
+}
+
+.skill-error-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--fg);
+  margin: 0;
+}
+
+.skill-error-desc {
+  font-size: 14px;
+  color: var(--fg-secondary);
+  margin: 0;
+  max-width: 380px;
+}
+
+.skill-error-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.skill-error-retry,
+.skill-error-back {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skill-error-retry {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.skill-error-retry:hover {
+  opacity: 0.88;
+}
+
+.skill-error-back {
+  background: var(--bg-elevated);
+  color: var(--fg-secondary);
+}
+.skill-error-back:hover {
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+
 </style>

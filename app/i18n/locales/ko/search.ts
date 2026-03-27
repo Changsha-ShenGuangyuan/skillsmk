@@ -32,6 +32,13 @@ const search = {
   'search.emptyTitle':   '일치하는 스킬을 찾을 수 없습니다',
   'search.emptyDesc':    '다른 키워드를 시도하거나 카테고리 필터를 해제하세요',
   'search.viewAll': '전체 보기',
+  // 错误提示
+  'search.error429':     '요청이 너무 많습니다. 잠시 후 다시 시도해주세요',
+  'search.error5xx':     '서버 오류가 발생했습니다. 나중에 다시 시도해주세요',
+  'search.errorNetwork': '로드에 실패했습니다. 네트워크 연결을 확인해주세요',
+  'search.errorRetry':   '다시 로드',
+  'search.emptyMatchPre':  '"',
+  'search.emptyMatchPost': '"에 일치하는 스킬을 찾을 수 없습니다',
 } as const
 
 export default search

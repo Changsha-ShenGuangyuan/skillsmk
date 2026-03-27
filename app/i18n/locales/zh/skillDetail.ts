@@ -48,6 +48,10 @@ const skillDetail = {
   'detail.stepConfigZipDesc':'按照 SKILL.md 中的说明，在支持 MCP 的应用中配置并启用该技能。',
   'detail.metaBy':    ' 作者 ',
   'detail.metaStars': ' 星',
+  'detail.loadError':     '详情加载失败',
+  'detail.loadErrorDesc': '该技能可能不存在或已下架，请检查网络并重试。',
+  'detail.retry':         '重新加载',
+  'detail.goBack':        '返回上一页',
 } as const
 
 export default skillDetail

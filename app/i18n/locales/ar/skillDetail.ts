@@ -48,6 +48,10 @@ const skillDetail = {
   'detail.stepConfigZipDesc':'اتبع تعليمات SKILL.md لضبط هذه المهارة وتفعيلها في تطبيقك.',
   'detail.metaBy':    ' بقلم ',
   'detail.metaStars': ' نجمة',
+  'detail.loadError':     'فشل التحميل',
+  'detail.loadErrorDesc': 'قد لا تكون هذه المهارة موجودة أو تم حذفها. تحقق من الشبكة وأعد المحاولة.',
+  'detail.retry':         'إعادة التحميل',
+  'detail.goBack':        'العودة',
 } as const
 
 export default skillDetail

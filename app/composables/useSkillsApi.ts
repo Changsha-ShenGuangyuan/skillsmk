@@ -97,20 +97,29 @@ export function toSkillCardProps(skill: ApiSkill) {
 
 // ── skill_key → skill_id 本地缓存（localStorage），跨标签页共享 ──
 const CACHE_KEY = 'sk_key_map'
+/** 最多缓存 500 条映射，超出时驱逐最旧的一半，防止 localStorage 无限膨胀 */
+const MAX_CACHE_ENTRIES = 500
 
 function saveToCache(skills: ApiSkill[]) {
   if (!import.meta.client) return
   try {
-    const existing = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}')
+    const existing: Record<string, string> = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}')
+    // 写入新条目
     skills.forEach(s => { if (s.skill_key && s.skill_id) existing[s.skill_key] = s.skill_id })
+    // 超出上限：删除最旧的一半（Object.keys 保留插入顺序）
+    const keys = Object.keys(existing)
+    if (keys.length > MAX_CACHE_ENTRIES) {
+      const toRemove = keys.slice(0, Math.floor(keys.length / 2))
+      toRemove.forEach(k => delete existing[k])
+    }
     localStorage.setItem(CACHE_KEY, JSON.stringify(existing))
-  } catch { /* 静默失败 */ }
+  } catch { /* 静默失败：隐私模式或存储已满时不影响主流程 */ }
 }
 
 function getFromCache(skillKey: string): string | null {
   if (!import.meta.client) return null
   try {
-    const map = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}')
+    const map: Record<string, string> = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}')
     return map[skillKey] ?? null
   } catch { return null }
 }
